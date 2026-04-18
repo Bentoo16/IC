@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 
 # 1. Configuração (RECOMENDO GERAR UMA CHAVE NOVA, ESSA FOI EXPOSTA)
-genai.configure(api_key="SUA_CHAVE_AQUI")
+genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-flash-latest')
 
 st.title("📝 Gerador de Relatórios")
