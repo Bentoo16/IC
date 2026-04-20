@@ -48,8 +48,8 @@ perguntas = {
     # AQUI ESTAVA O ERRO: Adicionado a chave "opcoes" para manter o padrão
     "Imagem sem artefatos (se houver, descrever)": {
         "opcoes": {
-            "Sim": "Possui artefatos",
-            "Não": "Sem artefatos"
+            "Sim": "Não possui artefatos",
+            "Não": "Possui artefatos"
         }
     }
 }
