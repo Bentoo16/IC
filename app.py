@@ -1,7 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 
-# 1. Configuração (RECOMENDO GERAR UMA CHAVE NOVA, ESSA FOI EXPOSTA)
+# 1. Configuração
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-flash-latest')
 
@@ -45,7 +45,6 @@ perguntas = {
             "Não": "A área não está adequadamente escura"
         }
     },
-    # AQUI ESTAVA O ERRO: Adicionado a chave "opcoes" para manter o padrão
     "Imagem sem artefatos (se houver, descrever)": {
         "opcoes": {
             "Sim": "Não possui artefatos",
