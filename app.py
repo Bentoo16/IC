@@ -1,23 +1,24 @@
 import streamlit as st
 import google.generativeai as genai
-from docx import Document  # Importação para manipulação do Word
-from io import BytesIO  # Importação para gerenciar o arquivo na memória
+from docx import Document
+from io import BytesIO
+import re
 
-# 1. Configuração da IA
+# 1. Configuração da IA - Usando o modelo que tem maior cota gratuita
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
-st.title("📝 Gerador de Relatórios Multi-Casos (Até 5 Casos)")
+st.title("📝 Gerador de Relatórios Multi-Casos")
 
-# --- INICIALIZAÇÃO DA MEMÓRIA (Session State) ---
+# --- INICIALIZAÇÃO DA MEMÓRIA ---
 if "casos_salvos" not in st.session_state:
-    st.session_state.casos_salvos = {}  # Guarda o texto bruto de cada caso
+    st.session_state.casos_salvos = {}
 if "relatorios_ia" not in st.session_state:
-    st.session_state.relatorios_ia = {}  # Guarda a resposta da IA de cada caso
+    st.session_state.relatorios_ia = {}
 if "relatorio_geral_salvo" not in st.session_state:
-    st.session_state.relatorio_geral_salvo = None  # Guarda o relatório geral para exportação
+    st.session_state.relatorio_geral_salvo = None
 
-# 2. Biblioteca de Perguntas (TODAS com sub-opções genéricas condicionadas)
+# 2. Biblioteca de Perguntas
 perguntas = {
     "Contraste adequado": {
         "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
@@ -74,173 +75,81 @@ perguntas = {
     }
 }
 
-# --- SELEÇÃO DE QUAL CASO ESTÁ SENDO ANALISADO ---
+# --- SELEÇÃO DE CASO ---
 st.markdown("---")
 caso_atual = st.selectbox(" Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
-st.info(f"Modo de Edição: preenchendo dados para o **Caso {caso_atual}**")
 
 # 3. Interface de Perguntas
 respostas_temporarias = []
-
 for titulo, info in perguntas.items():
     st.subheader(titulo)
-
     escolha = st.radio(f"Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}")
-
     sub_escolha = None
     if "sub_opcoes" in info and escolha == "Não":
-        sub_escolha = st.radio(
-            f"Especifique o problema para {titulo}:",
-            list(info["sub_opcoes"].keys()),
-            key=f"sub_{titulo}_c{caso_atual}"
-        )
-
+        sub_escolha = st.radio(f"Especifique o problema para {titulo}:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
     obs = st.text_input(f"Descrever detalhe (opcional):", key=f"obs_{titulo}_c{caso_atual}")
+    respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
-    respostas_temporarias.append({
-        "titulo": titulo,
-        "escolha": escolha,
-        "sub_escolha": sub_escolha,
-        "obs": obs
-    })
-
-st.markdown("---")
-salvar_caso = st.button(f" Analisar e Salvar Caso {caso_atual}")
-
-# 4. Lógica ao Salvar o Caso Atual
-if salvar_caso:
+# 4. Lógica ao Salvar
+if st.button(f" Analisar e Salvar Caso {caso_atual}"):
     respostas_finais = []
     for item in respostas_temporarias:
         info_pergunta = perguntas[item["titulo"]]
-        if item["escolha"] == "Não" and item["sub_escolha"]:
-            frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
-        else:
-            frase_base = info_pergunta["opcoes"][item["escolha"]]
-
-        if item["obs"]:
-            frase_base += f" Detalhe adicional: {item['obs']}"
+        frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]] if item["escolha"] == "Não" and item["sub_escolha"] else info_pergunta["opcoes"][item["escolha"]]
+        if item["obs"]: frase_base += f" Detalhe adicional: {item['obs']}"
         respostas_finais.append(frase_base)
 
-    texto_bruto_caso = " ".join(respostas_finais)
-    st.session_state.casos_salvos[f"Caso {caso_atual}"] = texto_bruto_caso
+    texto_bruto = " ".join(respostas_finais)
+    st.session_state.casos_salvos[f"Caso {caso_atual}"] = texto_bruto
+    
+    with st.spinner("Processando..."):
+        prompt = f"Deixe essas frases em um único texto coeso, sem outras opções. Não mude as frases,apenas deixe o texto coeso sem alterar muito o que já está escrito para o Caso {caso_atual}: {texto_bruto}"
+        response = model.generate_content(prompt)
+        st.session_state.relatorios_ia[f"Caso {caso_atual}"] = response.text
+        st.success(f"Caso {caso_atual} salvo com sucesso!")
 
-    st.markdown("---")
-    st.markdown(f"### 📋 Frases Juntas do Caso {caso_atual} (Texto Bruto):")
-    st.warning(texto_bruto_caso)
+# --- RELATÓRIO GERAL ---
+if len(st.session_state.casos_salvos) >= 2:
+    if st.button(" Gerar Relatório Geral Consolidado"):
+        compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
+        response_geral = model.generate_content(f"Dado todos os casos, agora faça um relatório geral ressaltando os pontos importantes: {compilado}")
+        st.session_state.relatorio_geral_salvo = response_geral.text
+        st.info(st.session_state.relatorio_geral_salvo)
 
-    with st.spinner(f"Processando Relatório Individual do Caso {caso_atual}..."):
-        prompt_individual = f"Deixe essas frases em um único texto coeso, sem outras opções. Não mude as frases,apenas deixe o texto coeso sem alterar muito o que já está escrito para o Caso {caso_atual}: {texto_bruto_caso}"
-        try:
-            response = model.generate_content(prompt_individual)
-            st.session_state.relatorios_ia[f"Caso {caso_atual}"] = response.text
-
-            st.markdown(f"### Relatório Individual do Caso {caso_atual} (Com IA):")
-            st.success(response.text)
-        except Exception as e:
-            st.error(f"Erro na IA: {e}")
-
-# --- PAINEL DE HISTÓRICO DE RESULTADOS ---
+# --- SISTEMA DE EXPORTAÇÃO CORRIGIDO ---
 if st.session_state.relatorios_ia:
     st.markdown("---")
-    st.header(" Histórico de Casos Salvos nesta Sessão")
+    st.header("💾 Exportar para Word")
 
-    abas = st.tabs(list(st.session_state.relatorios_ia.keys()))
-    for i, nome_caso in enumerate(st.session_state.relatorios_ia.keys()):
-        with abas[i]:
-            st.text_area("Texto Bruto Salvo:", st.session_state.casos_salvos[nome_caso], height=70, disabled=True,
-                         key=f"area_{nome_caso}")
-            st.write(st.session_state.relatorios_ia[nome_caso])
+    # Função para remover marcadores de negrito do Markdown (**) para o Word
+    def limpar_texto(texto):
+        return texto.replace("**", "").replace("__", "")
 
-# --- GERAÇÃO DO RELATÓRIO GERAL (Consolidado) ---
-if len(st.session_state.casos_salvos) >= 2:
-    st.markdown("---")
-    st.header(" Fechamento do Relatório Geral")
-    st.write(f"Você já tem {len(st.session_state.casos_salvos)} casos prontos para consolidar.")
-
-    gerar_geral = st.button(" Gerar Relatório Geral Consolidado")
-
-    if gerar_geral:
-        compilado_todos_casos = ""
-        for nome_caso, texto_caso in st.session_state.casos_salvos.items():
-            compilado_todos_casos += f"\n[{nome_caso}]: {texto_caso}\n"
-
-        st.markdown(f"### Compilado de todos os casos (Texto Bruto):")
-        st.warning(compilado_todos_casos)
-
-        with st.spinner("O Gemini está cruzando os dados e redigindo o relatório geral..."):
-            prompt_geral = f"""
-            Dado todos os casos, agora faça um relatório geral ressaltando os pontos importantes.
-
-            Dados dos casos:
-            {compilado_todos_casos}
-            """
-            try:
-                response_geral = model.generate_content(prompt_geral)
-                st.session_state.relatorio_geral_salvo = response_geral.text
-                st.markdown("---")
-                st.markdown("###  RELATÓRIO GERAL CONSOLIDADO:")
-                st.info(st.session_state.relatorio_geral_salvo)
-            except Exception as e:
-                st.error(f"Erro ao gerar relatório geral: {e}")
-
-# --- SISTEMA DE EXPORTAÇÃO PARA ARQUIVO WORD (.DOCX) E PRÉVIA ---
-if st.session_state.casos_salvos:
-    st.markdown("---")
-    st.header("💾 Exportar Documento para o Word")
-    
-    # --- BLOCO DE PRÉVIA VISUAL ---
-    with st.expander("🔍 Visualizar Prévia do Documento Word", expanded=False):
-        st.markdown("<h2 style='text-align: center; color: #1E3A8A;'>Relatório Consolidado de Casos Técnicos</h2>", unsafe_allow_html=True)
-        st.markdown("---")
-        
-        for nome_caso in sorted(st.session_state.casos_salvos.keys()):
-            st.markdown(f"###  {nome_caso}")
-            
-            if nome_caso in st.session_state.relatorios_ia:
-                st.markdown("**Relatório Individual Estruturado pela IA:**")
-                st.write(st.session_state.relatorios_ia[nome_caso])
-                
-            st.markdown("<hr style='border:1px dashed #ccc'>", unsafe_allow_html=True)
-            
-        if st.session_state.relatorio_geral_salvo:
-            st.markdown("<h3 style='color: #1E3A8A;'> Relatório Geral de Encerramento</h3>", unsafe_allow_html=True)
-            st.write(st.session_state.relatorio_geral_salvo)
-        else:
-            st.info("ℹ️ O Relatório Geral de Encerramento aparecerá aqui assim que for gerado acima.")
-
-    st.write("Clique no botão abaixo para baixar o arquivo `.docx` finalizado.")
-
-    # Lógica de criação do documento Word (Inalterada)
     def criar_documento_word():
         doc = Document()
-        doc.add_heading("Relatório Consolidado de Casos Técnicos", level=0)
+        doc.add_heading("Relatório Técnico de Casos", 0)
 
-        for nome_caso in sorted(st.session_state.casos_salvos.keys()):
+        for nome_caso in sorted(st.session_state.relatorios_ia.keys()):
             doc.add_heading(nome_caso, level=1)
             
-            doc.add_heading("Frases Selecionadas (Texto Bruto):", level=2)
-            doc.add_paragraph(st.session_state.casos_salvos[nome_caso])
+            # Aqui colocamos APENAS o relatório da IA, sem o texto bruto
+            texto_ia = st.session_state.relatorios_ia[nome_caso]
+            doc.add_paragraph(limpar_texto(texto_ia))
             
-            if nome_caso in st.session_state.relatorios_ia:
-                doc.add_heading("Relatório Individual Estruturado pela IA:", level=2)
-                doc.add_paragraph(st.session_state.relatorios_ia[nome_caso])
-                
             doc.add_paragraph("-" * 40)
 
         if st.session_state.relatorio_geral_salvo:
-            doc.add_heading("Relatório Geral de Encerramento", level=1)
-            doc.add_paragraph(st.session_state.relatorio_geral_salvo)
+            doc.add_heading("Relatório Geral Consolidado", level=1)
+            doc.add_paragraph(limpar_texto(st.session_state.relatorio_geral_salvo))
 
         output = BytesIO()
         doc.save(output)
         output.seek(0)
         return output
 
-    dados_docx = criar_documento_word()
-
     st.download_button(
-        label="📥 Baixar Relatório Completo (.docx)",
-        data=dados_docx,
-        file_name="relatorio_final_casos_agrupados.docx",
+        label="📥 Baixar Word Sem Texto Bruto",
+        data=criar_documento_word(),
+        file_name="relatorio_tecnico.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
