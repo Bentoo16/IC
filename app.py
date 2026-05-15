@@ -1,5 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
+from docx import Document  # Biblioteca para manipular arquivos do Word
+from io import BytesIO  # Permite criar o arquivo na memória antes do download
 
 # 1. Configuração da IA
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
@@ -12,56 +14,58 @@ if "casos_salvos" not in st.session_state:
     st.session_state.casos_salvos = {}  # Guarda o texto bruto de cada caso
 if "relatorios_ia" not in st.session_state:
     st.session_state.relatorios_ia = {}  # Guarda a resposta da IA de cada caso
+if "relatorio_geral_salvo" not in st.session_state:
+    st.session_state.relatorio_geral_salvo = None  # Guarda o relatório geral gerado pela IA
 
-# 2. Biblioteca de Perguntas (TODAS com sub-opções genéricas condicionadas)
+# 2. Biblioteca de Perguntas
 perguntas = {
     "Contraste adequado": {
         "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
         "sub_opcoes": {
-            "Contraste alto demias": "O contraste da imagem está alto demais.",
-            "Contraste baixo demais": "O contraste está baixo demais."
+            "Problema genérico A": "Frase gerada para o problema A do contraste.",
+            "Problema genérico B": "Frase gerada para o problema B do contraste."
         }
     },
     "Definição de estruturas": {
-        "opcoes": {"Sim": "As estruturas estão bem definidas na imagem.", "Não": "As estruturas não estão bem definidas na imagem."},
+        "opcoes": {"Sim": "Está bem definido.", "Não": "Não está bem definido."},
         "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema A.",
-            "Problema B": "Frase gerada para o problema B."
+            "Problema genérico A": "Frase gerada para o problema A da definição.",
+            "Problema genérico B": "Frase gerada para o problema B da definição."
         }
     },
     "Saturação correta nas áreas claras": {
-        "opcoes": {"Sim": "A imagem está bem saturada nas áreas claras.", "Não": "A imagem não está bem saturada nas áreas claras."},
+        "opcoes": {"Sim": "Está bem saturada nas áreas claras.", "Não": "Não está bem saturada nas áreas claras."},
         "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema A.",
-            "Problema B": "Frase gerada para o problema B."
+            "Problema genérico A": "Frase gerada para o problema A das áreas claras.",
+            "Problema genérico B": "Frase gerada para o problema B das áreas claras."
         }
     },
     "Saturação correta nas áreas escuras": {
-        "opcoes": {"Sim": "A imagem está bem saturada nas áreas escuras.", "Não": "A imagem não está bem saturada nas áreas escuras."},
+        "opcoes": {"Sim": "Está bem saturada nas áreas escuras.", "Não": "Não está bem saturada nas áreas escuras."},
         "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema .",
-            "Problema B": "Frase gerada para o problema B."
+            "Tem muita coisa": "A imagem apresenta supersaturação (excesso) nas áreas escuras.",
+            "Tem pouca coisa": "A imagem apresenta sub-saturação (falta) nas áreas escuras."
         }
     },
     "Imagem sem ruído": {
-        "opcoes": {"Sim": "A imagem está sem ruído.", "Não": "A imagem está com ruído."},
+        "opcoes": {"Sim": "Está sem ruído.", "Não": "Está com ruído."},
         "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema A.",
-            "Problema B": "Frase gerada para o problema B."
+            "Problema genérico A": "Frase gerada para o problema A de ruído.",
+            "Problema genérico B": "Frase gerada para o problema B de ruído."
         }
     },
     "A área de fundo está adequadamente escura (enegrecimento película)": {
-        "opcoes": {"Sim": "A área de fundo da imagem está adequadamente escura.", "Não": "A áread e fundo da imagem não está adequadamente escura."},
+        "opcoes": {"Sim": "A área está adequadamente escura.", "Não": "A área não está adequadamente escura."},
         "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema A.",
-            "Problema genérico B": "Frase gerada para o problema B."
+            "Problema genérico A": "Frase gerada para o problema A do fundo.",
+            "Problema genérico B": "Frase gerada para o problema B do fundo."
         }
     },
     "Imagem sem artefatos (se houver, descrever)": {
-        "opcoes": {"Sim": "A imagem não possui artefatos.", "Não": "A imagem possui artefatos."},
+        "opcoes": {"Sim": "Não possui artefatos.", "Não": "Possui artefatos."},
         "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema A.",
-            "Problema B": "Frase gerada para o problema B."
+            "Problema genérico A": "Frase gerada para o problema A de artefatos.",
+            "Problema genérico B": "Frase gerada para o problema B de artefatos."
         }
     }
 }
@@ -121,7 +125,7 @@ if salvar_caso:
     st.warning(texto_bruto_caso)
 
     with st.spinner(f"Processando Relatório Individual do Caso {caso_atual}..."):
-        prompt_individual = f"Deixe essas frases em um único texto coeso, sem outras opções. Não mude as frases,apenas deixe o texto coeso sem alterar muito o que já está escrito para o Caso {caso_atual}: {texto_bruto_caso}"
+        prompt_individual = f"Deixe essas frases em um text coeso, não adicione nada além do que está nas frases, para o Caso {caso_atual}: {texto_bruto_caso}"
         try:
             response = model.generate_content(prompt_individual)
             st.session_state.relatorios_ia[f"Caso {caso_atual}"] = response.text
@@ -167,8 +171,54 @@ if len(st.session_state.casos_salvos) >= 2:
             """
             try:
                 response_geral = model.generate_content(prompt_geral)
+                st.session_state.relatorio_geral_salvo = response_geral.text
                 st.markdown("---")
                 st.markdown("###  RELATÓRIO GERAL CONSOLIDADO:")
-                st.info(response_geral.text)
+                st.info(st.session_state.relatorio_geral_salvo)
             except Exception as e:
                 st.error(f"Erro ao gerar relatório geral: {e}")
+
+# --- SEÇÃO EXCLUSIVA PARA EXPORTAÇÃO PARA WORD (NOVO) ---
+if st.session_state.casos_salvos:
+    st.markdown("---")
+    st.header("💾 Exportar Resultados para Word")
+    st.write("Clique no botão abaixo para gerar o arquivo `.docx` completo com todos os dados atuais.")
+    
+    # Função que monta o documento Word na memória
+    def criar_arquivo_word():
+        doc = Document()
+        doc.add_heading("Relatório Técnico de Casos Múltiplos", level=0)
+        
+        # Percorre cada caso adicionando seus detalhes ao Word
+        for nome_caso in sorted(st.session_state.casos_salvos.keys()):
+            doc.add_heading(nome_caso, level=1)
+            
+            doc.add_heading("Texto Bruto Selecionado:", level=2)
+            doc.add_paragraph(st.session_state.casos_salvos[nome_caso])
+            
+            if nome_caso in st.session_state.relatorios_ia:
+                doc.add_heading("Relatório Individual (IA):", level=2)
+                doc.add_paragraph(st.session_state.relatorios_ia[nome_caso])
+                
+            doc.add_paragraph("-" * 30) # Separador de linha simples no Word
+            
+        # Adiciona o Relatório Geral ao fim do documento, se ele existir
+        if st.session_state.relatorio_geral_salvo:
+            doc.add_heading("Relatório Geral Consolidado", level=1)
+            doc.add_paragraph(st.session_state.relatorio_geral_salvo)
+            
+        # Salva o documento no buffer de memória BytesIO
+        buffer = BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+        return buffer
+
+    # Executa a criação do Word e exibe o botão nativo de download do Streamlit
+    arquivo_docx = criar_arquivo_word()
+    
+    st.download_button(
+        label="📥 Baixar Arquivo Word (.docx)",
+        data=arquivo_docx,
+        file_name="relatorio_completo_casos.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
