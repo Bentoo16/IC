@@ -17,16 +17,16 @@ if "relatorios_ia" not in st.session_state:
 perguntas = {
     "Contraste adequado": {
         "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."}
+        "sub_opcoes": {
+            "Tem muito contraste": "A imagem apresenta constraste acima do adequado.",
+            "Tem pouco contraste": "A imagem apresenta contraste abaixo do adequado."
+        }
     },
     "Definição de estruturas": {
         "opcoes": {"Sim": "Está bem definido.", "Não": "Não está bem definido."}
     },
     "Saturação correta nas áreas claras": {
         "opcoes": {"Sim": "Está bem saturada nas áreas claras.", "Não": "Não está bem saturada nas áreas claras."},
-        "sub_opcoes": {
-            "Tem muita coisa": "A imagem apresenta supersaturação (excesso) nas áreas claras.",
-            "Tem pouca coisa": "A imagem apresenta sub-saturação (falta) nas áreas claras."
-        }
     },
     "Saturação correta nas áreas escuras": {
         "opcoes": {"Sim": "Está bem saturada nas áreas escuras.", "Não": "Não está bem saturada nas áreas escuras."},
@@ -48,7 +48,7 @@ perguntas = {
 
 # --- SELEÇÃO DE QUAL CASO ESTÁ SENDO ANALISADO ---
 st.markdown("---")
-caso_atual = st.selectbox("📌 Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
+caso_atual = st.selectbox(" Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
 st.info(f"Modo de Edição: preenchendo dados para o **Caso {caso_atual}**")
 
 # 3. Interface de Perguntas
@@ -77,7 +77,7 @@ for titulo, info in perguntas.items():
     })
 
 st.markdown("---")
-salvar_caso = st.button(f"🚀 Analisar e Salvar Caso {caso_atual}")
+salvar_caso = st.button(f" Analisar e Salvar Caso {caso_atual}")
 
 # 4. Lógica ao Salvar o Caso Atual
 if salvar_caso:
@@ -128,7 +128,7 @@ if len(st.session_state.casos_salvos) >= 2:
     st.header(" Fechamento do Relatório Geral")
     st.write(f"Você já tem {len(st.session_state.casos_salvos)} casos prontos para consolidar.")
     
-    gerar_geral = st.button("✨ Gerar Relatório Geral Consolidado")
+    gerar_geral = st.button(" Gerar Relatório Geral Consolidado")
     
     if gerar_geral:
         # TUDO DAQUI PARA BAIXO FOI IDENTADO PARA DENTRO DO 'if gerar_geral'
@@ -149,7 +149,7 @@ if len(st.session_state.casos_salvos) >= 2:
             try:
                 response_geral = model.generate_content(prompt_geral)
                 st.markdown("---")
-                st.markdown("### 🏆 RELATÓRIO GERAL CONSOLIDADO:")
+                st.markdown("###  RELATÓRIO GERAL CONSOLIDADO:")
                 st.info(response_geral.text)
             except Exception as e:
                 st.error(f"Erro ao gerar relatório geral: {e}")
