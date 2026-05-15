@@ -23,42 +23,42 @@ perguntas = {
         }
     },
     "Definição de estruturas": {
-        "opcoes": {"Sim": "Está bem definido.", "Não": "Não está bem definido."},
+        "opcoes": {"Sim": "As estruturas estão bem definidas na imagem.", "Não": "As estruturas não estão bem definidas na imagem."},
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
             "Problema B": "Frase gerada para o problema B."
         }
     },
     "Saturação correta nas áreas claras": {
-        "opcoes": {"Sim": "Está bem saturada nas áreas claras.", "Não": "Não está bem saturada nas áreas claras."},
+        "opcoes": {"Sim": "A imagem está bem saturada nas áreas claras.", "Não": "A imagem não está bem saturada nas áreas claras."},
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
             "Problema B": "Frase gerada para o problema B."
         }
     },
     "Saturação correta nas áreas escuras": {
-        "opcoes": {"Sim": "Está bem saturada nas áreas escuras.", "Não": "Não está bem saturada nas áreas escuras."},
+        "opcoes": {"Sim": "A imagem está bem saturada nas áreas escuras.", "Não": "A imagem não está bem saturada nas áreas escuras."},
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema .",
             "Problema B": "Frase gerada para o problema B."
         }
     },
     "Imagem sem ruído": {
-        "opcoes": {"Sim": "Está sem ruído.", "Não": "Está com ruído."},
+        "opcoes": {"Sim": "A imagem está sem ruído.", "Não": "A imagem está com ruído."},
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
             "Problema B": "Frase gerada para o problema B."
         }
     },
     "A área de fundo está adequadamente escura (enegrecimento película)": {
-        "opcoes": {"Sim": "A área está adequadamente escura.", "Não": "A área não está adequadamente escura."},
+        "opcoes": {"Sim": "A área de fundo da imagem está adequadamente escura.", "Não": "A áread e fundo da imagem não está adequadamente escura."},
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
             "Problema genérico B": "Frase gerada para o problema B."
         }
     },
     "Imagem sem artefatos (se houver, descrever)": {
-        "opcoes": {"Sim": "Não possui artefatos.", "Não": "Possui artefatos."},
+        "opcoes": {"Sim": "A imagem não possui artefatos.", "Não": "A imagem possui artefatos."},
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
             "Problema B": "Frase gerada para o problema B."
