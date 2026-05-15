@@ -3,7 +3,7 @@ import google.generativeai as genai
 from docx import Document
 from io import BytesIO
 
-# 1. Configuração da IA (Mantendo o 1.5 Flash pela cota maior)
+# 1. Configuração da IA 
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
@@ -74,7 +74,7 @@ perguntas = {
     }
 }
 
-# --- SELEÇÃO DE CASO ---
+# SELEÇÃO DE CASO
 st.markdown("---")
 caso_atual = st.selectbox(" Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
 
@@ -89,7 +89,7 @@ for titulo, info in perguntas.items():
     obs = st.text_input(f"Detalhe (opcional):", key=f"obs_{titulo}_c{caso_atual}")
     respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
-# 4. Lógica ao Salvar (Mostra o texto bruto na tela)
+# 4. Lógica ao Salvar 
 if st.button(f" Analisar e Salvar Caso {caso_atual}"):
     respostas_finais = []
     for item in respostas_temporarias:
@@ -101,7 +101,7 @@ if st.button(f" Analisar e Salvar Caso {caso_atual}"):
     texto_bruto = " ".join(respostas_finais)
     st.session_state.casos_salvos[f"Caso {caso_atual}"] = texto_bruto
     
-    # EXIBIÇÃO DO TEXTO BRUTO NA TELA (Continua aqui conforme seu pedido)
+    # EXIBIÇÃO DO TEXTO BRUTO NA TELA 
     st.markdown(f"### 📋 Texto Bruto do Caso {caso_atual}:")
     st.warning(texto_bruto)
 
@@ -111,7 +111,7 @@ if st.button(f" Analisar e Salvar Caso {caso_atual}"):
         st.session_state.relatorios_ia[f"Caso {caso_atual}"] = response.text
         st.success(f"Caso {caso_atual} processado!")
 
-# --- HISTÓRICO NA TELA ---
+# HISTÓRICO NA TELA
 if st.session_state.relatorios_ia:
     st.markdown("---")
     st.header(" Histórico da Sessão")
@@ -124,7 +124,7 @@ if st.session_state.relatorios_ia:
             st.write("**Relatório IA:**")
             st.write(st.session_state.relatorios_ia[nome_caso])
 
-# --- RELATÓRIO GERAL ---
+# RELATÓRIO GERAL 
 if len(st.session_state.casos_salvos) >= 2:
     if st.button(" Gerar Relatório Geral"):
         compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
@@ -132,7 +132,7 @@ if len(st.session_state.casos_salvos) >= 2:
         st.session_state.relatorio_geral_salvo = response_geral.text
         st.info(st.session_state.relatorio_geral_salvo)
 
-# --- SISTEMA DE EXPORTAÇÃO (LIMPO PARA O WORD) ---
+# SISTEMA DE EXPORTAÇÃO 
 if st.session_state.relatorios_ia:
     st.markdown("---")
     st.header("💾 Exportar Documento")
@@ -140,6 +140,17 @@ if st.session_state.relatorios_ia:
     def limpar_formatacao(texto):
         # Remove os asteriscos (**) que a IA usa para negrito
         return texto.replace("**", "").replace("__", "")
+    # --- BLOCO DA PRÉVIA (Apenas visual no Streamlit) ---
+    with st.expander(" Visualizar Prévia do Documento", expanded=True):
+        st.markdown("### PRÉVIA DO DOCUMENTO (Como ficará no Word)")
+        for nome_caso in sorted(st.session_state.relatorios_ia.keys()):
+            st.markdown(f"**{nome_caso}**")
+            # Na prévia mostramos o texto da IA (com negrito do markdown funcionando no st.write)
+            st.write(st.session_state.relatorios_ia[nome_caso])
+            st.markdown("---")
+        if st.session_state.relatorio_geral_salvo:
+            st.markdown("**Relatório Geral Consolidado**")
+            st.write(st.session_state.relatorio_geral_salvo)
 
     def criar_docx_limpo():
         doc = Document()
@@ -148,7 +159,7 @@ if st.session_state.relatorios_ia:
         for nome_caso in sorted(st.session_state.relatorios_ia.keys()):
             doc.add_heading(nome_caso, level=1)
             
-            # ADICIONA APENAS O TEXTO DA IA (Limpo, sem asteriscos e sem texto bruto)
+            # ADICIONA APENAS O TEXTO DA IA 
             texto_ia = st.session_state.relatorios_ia[nome_caso]
             doc.add_paragraph(limpar_formatacao(texto_ia))
             
