@@ -5,7 +5,7 @@ from io import BytesIO  # Importação para gerenciar o arquivo na memória
 
 # 1. Configuração da IA
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
+model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
 st.title("📝 Gerador de Relatórios Multi-Casos (Até 5 Casos)")
 
