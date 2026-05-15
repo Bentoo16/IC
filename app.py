@@ -194,7 +194,7 @@ if st.session_state.casos_salvos:
         st.markdown("---")
         
         for nome_caso in sorted(st.session_state.casos_salvos.keys()):
-            st.markdown(f"### 📂 {nome_caso}")
+            st.markdown(f"###  {nome_caso}")
             
             st.markdown("**Frases Selecionadas (Texto Bruto):**")
             st.caption(st.session_state.casos_salvos[nome_caso])
@@ -206,7 +206,7 @@ if st.session_state.casos_salvos:
             st.markdown("<hr style='border:1px dashed #ccc'>", unsafe_allow_html=True)
             
         if st.session_state.relatorio_geral_salvo:
-            st.markdown("<h3 style='color: #1E3A8A;'>📋 Relatório Geral de Encerramento</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #1E3A8A;'> Relatório Geral de Encerramento</h3>", unsafe_allow_html=True)
             st.write(st.session_state.relatorio_geral_salvo)
         else:
             st.info("ℹ️ O Relatório Geral de Encerramento aparecerá aqui assim que for gerado acima.")
