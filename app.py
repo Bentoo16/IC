@@ -96,7 +96,6 @@ if salvar_caso:
     texto_bruto_caso = " ".join(respostas_finais)
     st.session_state.casos_salvos[f"Caso {caso_atual}"] = texto_bruto_caso
 
-    # AJUSTE AQUI: Mostra o texto bruto na tela imediatamente após o clique
     st.markdown("---")
     st.markdown(f"### 📋 Frases Juntas do Caso {caso_atual} (Texto Bruto):")
     st.warning(texto_bruto_caso)
@@ -107,7 +106,6 @@ if salvar_caso:
             response = model.generate_content(prompt_individual)
             st.session_state.relatorios_ia[f"Caso {caso_atual}"] = response.text
             
-            # AJUSTE AQUI: Mostra o resultado da IA na tela na mesma hora
             st.markdown(f"### 🤖 Relatório Individual do Caso {caso_atual} (Com IA):")
             st.success(response.text)
         except Exception as e:
@@ -124,22 +122,23 @@ if st.session_state.relatorios_ia:
             st.text_area("Texto Bruto Salvo:", st.session_state.casos_salvos[nome_caso], height=70, disabled=True, key=f"area_{nome_caso}")
             st.write(st.session_state.relatorios_ia[nome_caso])
 
-# --- GERAÇÃO DO RELATÓRIO GERAL (Consolidado) ---
+# --- GERAÇÃO DO RELATÓRIO GERAL (Consolidado - CORRIGIDO) ---
 if len(st.session_state.casos_salvos) >= 2:
     st.markdown("---")
     st.header("🏁 Fechamento do Relatório Geral")
     st.write(f"Você já tem {len(st.session_state.casos_salvos)} casos prontos para consolidar.")
     
-    gerar_geral = st.button(" Gerar Relatório Geral Consolidado")
+    gerar_geral = st.button("✨ Gerar Relatório Geral Consolidado")
     
     if gerar_geral:
+        # TUDO DAQUI PARA BAIXO FOI IDENTADO PARA DENTRO DO 'if gerar_geral'
         compilado_todos_casos = ""
         for nome_caso, texto_caso in st.session_state.casos_salvos.items():
             compilado_todos_casos += f"\n[{nome_caso}]: {texto_caso}\n"
             
-    st.markdown(f"### Compilado de todos os casos (Texto Bruto):")
-    st.warning(compilado_todos_casos)
-    
+        st.markdown(f"### Compilado de todos os casos (Texto Bruto):")
+        st.warning(compilado_todos_casos)
+        
         with st.spinner("O Gemini está cruzando os dados e redigindo o relatório geral..."):
             prompt_geral = f"""
             Você é um especialista técnico sênior. 
@@ -148,7 +147,7 @@ if len(st.session_state.casos_salvos) >= 2:
             
             O relatório deve conter:
             1. Uma introdução resumindo o objetivo do relatório.
-            2. Uma análise comparativa destacando quais pontos foram críticos ou recorrentes nos casos (ex: se vários casos falharam em saturação).
+            2. Uma análise comparativa destacando quais pontos foram críticos ou recurrentes nos casos (ex: se vários casos falharam em saturação).
             3. Uma conclusão técnica com recomendações.
 
             Dados dos casos:
@@ -156,7 +155,8 @@ if len(st.session_state.casos_salvos) >= 2:
             """
             try:
                 response_geral = model.generate_content(prompt_geral)
-                st.markdown("###  RELATÓRIO GERAL CONSOLIDADO:")
+                st.markdown("---")
+                st.markdown("### 🏆 RELATÓRIO GERAL CONSOLIDADO:")
                 st.info(response_geral.text)
             except Exception as e:
                 st.error(f"Erro ao gerar relatório geral: {e}")
