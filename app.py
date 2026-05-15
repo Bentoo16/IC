@@ -128,7 +128,7 @@ if st.session_state.relatorios_ia:
 if len(st.session_state.casos_salvos) >= 2:
     if st.button(" Gerar Relatório Geral"):
         compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
-        response_geral = model.generate_content(f"Faça um relatório geral dos casos: {compilado}")
+        response_geral = model.generate_content(f"Diga o que tem de semelhante em todos os casos e dê uma conclusão curta com as considerações gerais dos casos: {compilado}")
         st.session_state.relatorio_geral_salvo = response_geral.text
         st.info(st.session_state.relatorio_geral_salvo)
 
