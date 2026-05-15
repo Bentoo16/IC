@@ -13,7 +13,11 @@ perguntas = {
         "opcoes": {
             "Sim": "O contraste está adequado.",
             "Não": "O contraste não está adequado."
-        }
+        },
+         "sub_opcoes": {
+            "Tem muita contraste": "A imagem apresenta muito contraste.",
+            "Tem pouco contraste": "A imagem apresenta pouco contraste."
+         }
     },
     "Definição de estruturas": {
         "opcoes": {
@@ -25,20 +29,12 @@ perguntas = {
         "opcoes": {
             "Sim": "Está bem saturada nas áreas claras.",
             "Não": "Não está bem saturada nas áreas claras."
-        },
-        "sub_opcoes": {
-            "Tem muita coisa": "A imagem apresenta supersaturação (excesso) nas áreas claras.",
-            "Tem pouca coisa": "A imagem apresenta sub-saturação (falta) nas áreas claras."
         }
     },
     "Saturação correta nas áreas escuras": {
         "opcoes": {
             "Sim": "Está bem saturada nas áreas escuras.",
             "Não": "Não está bem saturada nas áreas escuras."
-        },
-        "sub_opcoes": {
-            "Tem muita coisa": "A imagem apresenta supersaturação (excesso) nas áreas escuras.",
-            "Tem pouca coisa": "A imagem apresenta sub-saturação (falta) nas áreas escuras."
         }
     },
     "Imagem sem ruído": {
