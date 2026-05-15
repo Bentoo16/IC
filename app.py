@@ -130,13 +130,16 @@ if len(st.session_state.casos_salvos) >= 2:
     st.header("🏁 Fechamento do Relatório Geral")
     st.write(f"Você já tem {len(st.session_state.casos_salvos)} casos prontos para consolidar.")
     
-    gerar_geral = st.button("✨ Gerar Relatório Geral Consolidado")
+    gerar_geral = st.button(" Gerar Relatório Geral Consolidado")
     
     if gerar_geral:
         compilado_todos_casos = ""
         for nome_caso, texto_caso in st.session_state.casos_salvos.items():
             compilado_todos_casos += f"\n[{nome_caso}]: {texto_caso}\n"
             
+    st.markdown(f"### Compilado de todos os casos (Texto Bruto):")
+    st.warning(compilado_todos_casos)
+    
         with st.spinner("O Gemini está cruzando os dados e redigindo o relatório geral..."):
             prompt_geral = f"""
             Você é um especialista técnico sênior. 
@@ -153,7 +156,7 @@ if len(st.session_state.casos_salvos) >= 2:
             """
             try:
                 response_geral = model.generate_content(prompt_geral)
-                st.markdown("### 🏆 RELATÓRIO GERAL CONSOLIDADO:")
+                st.markdown("###  RELATÓRIO GERAL CONSOLIDADO:")
                 st.info(response_geral.text)
             except Exception as e:
                 st.error(f"Erro ao gerar relatório geral: {e}")
