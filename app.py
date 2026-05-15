@@ -196,9 +196,6 @@ if st.session_state.casos_salvos:
         for nome_caso in sorted(st.session_state.casos_salvos.keys()):
             st.markdown(f"###  {nome_caso}")
             
-            st.markdown("**Frases Selecionadas (Texto Bruto):**")
-            st.caption(st.session_state.casos_salvos[nome_caso])
-            
             if nome_caso in st.session_state.relatorios_ia:
                 st.markdown("**Relatório Individual Estruturado pela IA:**")
                 st.write(st.session_state.relatorios_ia[nome_caso])
