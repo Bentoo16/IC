@@ -15,7 +15,7 @@ perguntas = {
             "Não": "O contraste não está adequado."
         },
          "sub_opcoes": {
-            "Tem muita contraste": "A imagem apresenta muito contraste.",
+            "Tem muito contraste": "A imagem apresenta muito contraste.",
             "Tem pouco contraste": "A imagem apresenta pouco contraste."
          }
     },
@@ -107,6 +107,10 @@ if submit:
         respostas_finais.append(frase_base)
 
     texto_bruto = " ".join(respostas_finais)
+
+    # Mostrando o texto sem a IA primeiro
+    st.markdown("### 📋 Suas Frases Juntas (Texto Bruto):")
+    st.warning(texto_bruto)
 
     with st.spinner("Formatando relatório..."):
         prompt = f"Transforme estas frases em um relatório técnico profissional e coeso: {texto_bruto}"
