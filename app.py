@@ -2,9 +2,8 @@ import streamlit as st
 import google.generativeai as genai
 from docx import Document
 from io import BytesIO
-import re
 
-# 1. Configuração da IA - Usando o modelo que tem maior cota gratuita
+# 1. Configuração da IA (Mantendo o 1.5 Flash pela cota maior)
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
@@ -86,11 +85,11 @@ for titulo, info in perguntas.items():
     escolha = st.radio(f"Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}")
     sub_escolha = None
     if "sub_opcoes" in info and escolha == "Não":
-        sub_escolha = st.radio(f"Especifique o problema para {titulo}:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
-    obs = st.text_input(f"Descrever detalhe (opcional):", key=f"obs_{titulo}_c{caso_atual}")
+        sub_escolha = st.radio(f"Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
+    obs = st.text_input(f"Detalhe (opcional):", key=f"obs_{titulo}_c{caso_atual}")
     respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
-# 4. Lógica ao Salvar
+# 4. Lógica ao Salvar (Mostra o texto bruto na tela)
 if st.button(f" Analisar e Salvar Caso {caso_atual}"):
     respostas_finais = []
     for item in respostas_temporarias:
@@ -102,45 +101,62 @@ if st.button(f" Analisar e Salvar Caso {caso_atual}"):
     texto_bruto = " ".join(respostas_finais)
     st.session_state.casos_salvos[f"Caso {caso_atual}"] = texto_bruto
     
-    with st.spinner("Processando..."):
-        prompt = f"Deixe essas frases em um único texto coeso, sem outras opções. Não mude as frases,apenas deixe o texto coeso sem alterar muito o que já está escrito para o Caso {caso_atual}: {texto_bruto}"
+    # EXIBIÇÃO DO TEXTO BRUTO NA TELA (Continua aqui conforme seu pedido)
+    st.markdown(f"### 📋 Texto Bruto do Caso {caso_atual}:")
+    st.warning(texto_bruto)
+
+    with st.spinner("IA formatando relatório..."):
+        prompt = f"Deixe essas frases em um único texto coeso. Não mude as frases, apenas deixe o texto coeso para o Caso {caso_atual}: {texto_bruto}"
         response = model.generate_content(prompt)
         st.session_state.relatorios_ia[f"Caso {caso_atual}"] = response.text
-        st.success(f"Caso {caso_atual} salvo com sucesso!")
+        st.success(f"Caso {caso_atual} processado!")
+
+# --- HISTÓRICO NA TELA ---
+if st.session_state.relatorios_ia:
+    st.markdown("---")
+    st.header(" Histórico da Sessão")
+    abas = st.tabs(list(st.session_state.relatorios_ia.keys()))
+    for i, nome_caso in enumerate(st.session_state.relatorios_ia.keys()):
+        with abas[i]:
+            # Texto bruto continua visível aqui nas abas
+            st.write("**Texto Bruto:**")
+            st.caption(st.session_state.casos_salvos[nome_caso])
+            st.write("**Relatório IA:**")
+            st.write(st.session_state.relatorios_ia[nome_caso])
 
 # --- RELATÓRIO GERAL ---
 if len(st.session_state.casos_salvos) >= 2:
-    if st.button(" Gerar Relatório Geral Consolidado"):
+    if st.button(" Gerar Relatório Geral"):
         compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
-        response_geral = model.generate_content(f"Dado todos os casos, agora faça um relatório geral ressaltando os pontos importantes: {compilado}")
+        response_geral = model.generate_content(f"Faça um relatório geral dos casos: {compilado}")
         st.session_state.relatorio_geral_salvo = response_geral.text
         st.info(st.session_state.relatorio_geral_salvo)
 
-# --- SISTEMA DE EXPORTAÇÃO CORRIGIDO ---
+# --- SISTEMA DE EXPORTAÇÃO (LIMPO PARA O WORD) ---
 if st.session_state.relatorios_ia:
     st.markdown("---")
-    st.header("💾 Exportar para Word")
+    st.header("💾 Exportar Documento")
 
-    # Função para remover marcadores de negrito do Markdown (**) para o Word
-    def limpar_texto(texto):
+    def limpar_formatacao(texto):
+        # Remove os asteriscos (**) que a IA usa para negrito
         return texto.replace("**", "").replace("__", "")
 
-    def criar_documento_word():
+    def criar_docx_limpo():
         doc = Document()
-        doc.add_heading("Relatório Técnico de Casos", 0)
+        doc.add_heading("Relatório Técnico Consolidado", 0)
 
         for nome_caso in sorted(st.session_state.relatorios_ia.keys()):
             doc.add_heading(nome_caso, level=1)
             
-            # Aqui colocamos APENAS o relatório da IA, sem o texto bruto
+            # ADICIONA APENAS O TEXTO DA IA (Limpo, sem asteriscos e sem texto bruto)
             texto_ia = st.session_state.relatorios_ia[nome_caso]
-            doc.add_paragraph(limpar_texto(texto_ia))
+            doc.add_paragraph(limpar_formatacao(texto_ia))
             
-            doc.add_paragraph("-" * 40)
+            doc.add_paragraph("-" * 30)
 
         if st.session_state.relatorio_geral_salvo:
-            doc.add_heading("Relatório Geral Consolidado", level=1)
-            doc.add_paragraph(limpar_texto(st.session_state.relatorio_geral_salvo))
+            doc.add_heading("Relatório Geral de Encerramento", level=1)
+            doc.add_paragraph(limpar_formatacao(st.session_state.relatorio_geral_salvo))
 
         output = BytesIO()
         doc.save(output)
@@ -148,8 +164,8 @@ if st.session_state.relatorios_ia:
         return output
 
     st.download_button(
-        label="📥 Baixar Word Sem Texto Bruto",
-        data=criar_documento_word(),
-        file_name="relatorio_tecnico.docx",
+        label="📥 Baixar Documento Final (.docx)",
+        data=criar_docx_limpo(),
+        file_name="relatorio_final.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
