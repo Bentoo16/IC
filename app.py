@@ -18,8 +18,8 @@ perguntas = {
     "Contraste adequado": {
         "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
         "sub_opcoes": {
-            "Contraste alto demias": "Frase gerada para o problema A do contraste.",
-            "Contraste baixo demais": "Frase gerada para o problema B do contraste."
+            "Contraste alto demias": "O contraste da imagem está alto demais.",
+            "Contraste baixo demais": "O contraste está baixo demais."
         }
     },
     "Definição de estruturas": {
