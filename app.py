@@ -13,36 +13,56 @@ if "casos_salvos" not in st.session_state:
 if "relatorios_ia" not in st.session_state:
     st.session_state.relatorios_ia = {}  # Guarda a resposta da IA de cada caso
 
-# 2. Biblioteca de Perguntas
+# 2. Biblioteca de Perguntas (TODAS com sub-opções genéricas condicionadas)
 perguntas = {
     "Contraste adequado": {
-        "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."}
+        "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
         "sub_opcoes": {
-            "Tem muito contraste": "A imagem apresenta constraste acima do adequado.",
-            "Tem pouco contraste": "A imagem apresenta contraste abaixo do adequado."
+            "Contraste alto demias": "Frase gerada para o problema A do contraste.",
+            "Contraste baixo demais": "Frase gerada para o problema B do contraste."
         }
     },
     "Definição de estruturas": {
-        "opcoes": {"Sim": "Está bem definido.", "Não": "Não está bem definido."}
+        "opcoes": {"Sim": "Está bem definido.", "Não": "Não está bem definido."},
+        "sub_opcoes": {
+            "Problema A": "Frase gerada para o problema A.",
+            "Problema B": "Frase gerada para o problema B."
+        }
     },
     "Saturação correta nas áreas claras": {
         "opcoes": {"Sim": "Está bem saturada nas áreas claras.", "Não": "Não está bem saturada nas áreas claras."},
+        "sub_opcoes": {
+            "Problema A": "Frase gerada para o problema A.",
+            "Problema B": "Frase gerada para o problema B."
+        }
     },
     "Saturação correta nas áreas escuras": {
         "opcoes": {"Sim": "Está bem saturada nas áreas escuras.", "Não": "Não está bem saturada nas áreas escuras."},
         "sub_opcoes": {
-            "Tem muita coisa": "A imagem apresenta supersaturação (excesso) nas áreas escuras.",
-            "Tem pouca coisa": "A imagem apresenta sub-saturação (falta) nas áreas escuras."
+            "Problema A": "Frase gerada para o problema .",
+            "Problema B": "Frase gerada para o problema B."
         }
     },
     "Imagem sem ruído": {
-        "opcoes": {"Sim": "Está sem ruído.", "Não": "Está com ruído."}
+        "opcoes": {"Sim": "Está sem ruído.", "Não": "Está com ruído."},
+        "sub_opcoes": {
+            "Problema A": "Frase gerada para o problema A.",
+            "Problema B": "Frase gerada para o problema B."
+        }
     },
     "A área de fundo está adequadamente escura (enegrecimento película)": {
-        "opcoes": {"Sim": "A área está adequadamente escura.", "Não": "A área não está adequadamente escura."}
+        "opcoes": {"Sim": "A área está adequadamente escura.", "Não": "A área não está adequadamente escura."},
+        "sub_opcoes": {
+            "Problema A": "Frase gerada para o problema A.",
+            "Problema genérico B": "Frase gerada para o problema B."
+        }
     },
     "Imagem sem artefatos (se houver, descrever)": {
-        "opcoes": {"Sim": "Não possui artefatos.", "Não": "Possui artefatos."}
+        "opcoes": {"Sim": "Não possui artefatos.", "Não": "Possui artefatos."},
+        "sub_opcoes": {
+            "Problema A": "Frase gerada para o problema A.",
+            "Problema B": "Frase gerada para o problema B."
+        }
     }
 }
 
@@ -101,7 +121,7 @@ if salvar_caso:
     st.warning(texto_bruto_caso)
 
     with st.spinner(f"Processando Relatório Individual do Caso {caso_atual}..."):
-        prompt_individual = f"Deixe essas frases em um texto coeso, não adicione nada além do que está nas frases, para o Caso {caso_atual}: {texto_bruto_caso}"
+        prompt_individual = f"Deixe essas frases em um text coeso, não adicione nada além do que está nas frases, para o Caso {caso_atual}: {texto_bruto_caso}"
         try:
             response = model.generate_content(prompt_individual)
             st.session_state.relatorios_ia[f"Caso {caso_atual}"] = response.text
@@ -122,7 +142,7 @@ if st.session_state.relatorios_ia:
             st.text_area("Texto Bruto Salvo:", st.session_state.casos_salvos[nome_caso], height=70, disabled=True, key=f"area_{nome_caso}")
             st.write(st.session_state.relatorios_ia[nome_caso])
 
-# --- GERAÇÃO DO RELATÓRIO GERAL (Consolidado - CORRIGIDO) ---
+# --- GERAÇÃO DO RELATÓRIO GERAL (Consolidado) ---
 if len(st.session_state.casos_salvos) >= 2:
     st.markdown("---")
     st.header(" Fechamento do Relatório Geral")
@@ -131,7 +151,6 @@ if len(st.session_state.casos_salvos) >= 2:
     gerar_geral = st.button(" Gerar Relatório Geral Consolidado")
     
     if gerar_geral:
-        # TUDO DAQUI PARA BAIXO FOI IDENTADO PARA DENTRO DO 'if gerar_geral'
         compilado_todos_casos = ""
         for nome_caso, texto_caso in st.session_state.casos_salvos.items():
             compilado_todos_casos += f"\n[{nome_caso}]: {texto_caso}\n"
