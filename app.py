@@ -101,12 +101,12 @@ if salvar_caso:
     st.warning(texto_bruto_caso)
 
     with st.spinner(f"Processando Relatório Individual do Caso {caso_atual}..."):
-        prompt_individual = f"Transforme estas frases em um relatório técnico profissional e curto para o Caso {caso_atual}: {texto_bruto_caso}"
+        prompt_individual = f"Deixe essas frases em um texto coeso, não adicione nada além do que está nas frases, para o Caso {caso_atual}: {texto_bruto_caso}"
         try:
             response = model.generate_content(prompt_individual)
             st.session_state.relatorios_ia[f"Caso {caso_atual}"] = response.text
             
-            st.markdown(f"### 🤖 Relatório Individual do Caso {caso_atual} (Com IA):")
+            st.markdown(f"### Relatório Individual do Caso {caso_atual} (Com IA):")
             st.success(response.text)
         except Exception as e:
             st.error(f"Erro na IA: {e}")
@@ -114,7 +114,7 @@ if salvar_caso:
 # --- PAINEL DE HISTÓRICO DE RESULTADOS ---
 if st.session_state.relatorios_ia:
     st.markdown("---")
-    st.header("📚 Histórico de Casos Salvos nesta Sessão")
+    st.header(" Histórico de Casos Salvos nesta Sessão")
     
     abas = st.tabs(list(st.session_state.relatorios_ia.keys()))
     for i, nome_caso in enumerate(st.session_state.relatorios_ia.keys()):
@@ -125,7 +125,7 @@ if st.session_state.relatorios_ia:
 # --- GERAÇÃO DO RELATÓRIO GERAL (Consolidado - CORRIGIDO) ---
 if len(st.session_state.casos_salvos) >= 2:
     st.markdown("---")
-    st.header("🏁 Fechamento do Relatório Geral")
+    st.header(" Fechamento do Relatório Geral")
     st.write(f"Você já tem {len(st.session_state.casos_salvos)} casos prontos para consolidar.")
     
     gerar_geral = st.button("✨ Gerar Relatório Geral Consolidado")
@@ -141,15 +141,8 @@ if len(st.session_state.casos_salvos) >= 2:
         
         with st.spinner("O Gemini está cruzando os dados e redigindo o relatório geral..."):
             prompt_geral = f"""
-            Você é um especialista técnico sênior. 
-            Abaixo estão as análises de múltiplos casos de um mesmo lote/estudo.
-            Crie um Relatório Geral Consolidado de nível corporativo.
+            Dado todos os casos, agora faça um relatório geral ressaltando os pontos importantes.
             
-            O relatório deve conter:
-            1. Uma introdução resumindo o objetivo do relatório.
-            2. Uma análise comparativa destacando quais pontos foram críticos ou recurrentes nos casos (ex: se vários casos falharam em saturação).
-            3. Uma conclusão técnica com recomendações.
-
             Dados dos casos:
             {compilado_todos_casos}
             """
