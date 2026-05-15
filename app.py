@@ -121,7 +121,7 @@ if salvar_caso:
     st.warning(texto_bruto_caso)
 
     with st.spinner(f"Processando Relatório Individual do Caso {caso_atual}..."):
-        prompt_individual = f"Deixe essas frases em um texto coeso, não adicione conceitos físicos além dos que estão nas frases, para o Caso {caso_atual}: {texto_bruto_caso}"
+        prompt_individual = f"Deixe essas frases em um texto coeso. Não mude as frases,apenas deixe o texto coeso sem alterar muito o que já está escrito para o Caso {caso_atual}: {texto_bruto_caso}"
         try:
             response = model.generate_content(prompt_individual)
             st.session_state.relatorios_ia[f"Caso {caso_atual}"] = response.text
