@@ -7,12 +7,12 @@ model = genai.GenerativeModel('gemini-flash-latest')
 
 st.title("📝 Gerador de Relatórios")
 
-# 2. Biblioteca de Perguntas (CORRIGIDA)
+# 2. Biblioteca de Perguntas (Atualizada com sub-opções)
 perguntas = {
     "Contraste adequado": {
         "opcoes": {
             "Sim": "O contraste está adequado.",
-            "Não": "O contraste não está adequado"
+            "Não": "O contraste não está adequado."
         }
     },
     "Definição de estruturas": {
@@ -25,62 +25,91 @@ perguntas = {
         "opcoes": {
             "Sim": "Está bem saturada nas áreas claras.",
             "Não": "Não está bem saturada nas áreas claras."
+        },
+        # ADICIONADO: Sub-escolha condicional caso marque "Não"
+        "sub_opcoes": {
+            "Tem muita coisa": "A imagem apresenta supersaturação (excesso) nas áreas claras.",
+            "Tem pouca coisa": "A imagem apresenta sub-saturação (falta) nas áreas claras."
         }
     },
     "Saturação correta nas áreas escuras": {
         "opcoes": {
             "Sim": "Está bem saturada nas áreas escuras.",
-            "Não": "Não está bem saturada nas áreas escuras"
+            "Não": "Não está bem saturada nas áreas escuras."
+        },
+        # ADICIONADO: Sub-escolha condicional caso marque "Não"
+        "sub_opcoes": {
+            "Tem muita coisa": "A imagem apresenta supersaturação (excesso) nas áreas escuras.",
+            "Tem pouca coisa": "A imagem apresenta sub-saturação (falta) nas áreas escuras."
         }
     },
     "Imagem sem ruído": {
         "opcoes": {
             "Sim": "Está sem ruído.",
-            "Não": "Está com ruído"
+            "Não": "Está com ruído."
         }
     },
     "A área de fundo está adequadamente escura (enegrecimento película)": {
         "opcoes": {
-            "Sim": "A área está adequadamente escura",
-            "Não": "A área não está adequadamente escura"
+            "Sim": "A área está adequadamente escura.",
+            "Não": "A área não está adequadamente escura."
         }
     },
     "Imagem sem artefatos (se houver, descrever)": {
         "opcoes": {
-            "Sim": "Não possui artefatos",
-            "Não": "Possui artefatos"
+            "Sim": "Não possui artefatos.",
+            "Não": "Possui artefatos."
         }
     }
 }
 
 # 3. Interface
-# Criamos a lista dentro do formulário para capturar os dados apenas no clique do botão
 with st.form("relatorio_form"):
     respostas_temporarias = []
 
     for titulo, info in perguntas.items():
         st.subheader(titulo)
 
-        # Opção fixa (Sim/Não)
+        # Opção fixa principal (Sim/Não)
         escolha = st.radio(f"Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}")
+
+        # LÓGICA CONDICIONAL: Se houver sub_opcoes e a escolha for "Não"
+        sub_escolha = None
+        if "sub_opcoes" in info and escolha == "Não":
+            sub_escolha = st.radio(
+                f"Especifique o problema para {titulo}:", 
+                list(info["sub_opcoes"].keys()), 
+                key=f"sub_{titulo}"
+            )
 
         # Campo livre (Sempre visível)
         obs = st.text_input(f"Descrever detalhe (opcional):", key=f"obs_{titulo}")
 
-        # Guardamos a escolha e a obs para processar depois do submit
-        respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "obs": obs})
+        # Guardamos a escolha principal, a sub-escolha (se houver) e a obs
+        respostas_temporarias.append({
+            "titulo": titulo, 
+            "escolha": escolha, 
+            "sub_escolha": sub_escolha, 
+            "obs": obs
+        })
 
     submit = st.form_submit_button("Gerar Relatório")
 
-# 4. Processamento da IA (Só acontece após o submit)
+# 4. Processamento da IA
 if submit:
     respostas_finais = []
 
     for item in respostas_temporarias:
-        # Pega a frase pronta baseada na escolha (Sim/Não)
-        frase_base = perguntas[item["titulo"]]["opcoes"][item["escolha"]]
+        info_pergunta = perguntas[item["titulo"]]
+        
+        # Se o usuário escolheu "Não" e havia uma sub-opção selecionada:
+        if item["escolha"] == "Não" and item["sub_escolha"]:
+            frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
+        else:
+            # Caso contrário (escolha Sim, ou Não sem sub-opção), usa a frase padrão
+            frase_base = info_pergunta["opcoes"][item["choose" if "choose" in item else "escolha"]]
 
-        # Adiciona a observação se ela existir
+        # Adiciona a observação de texto se o usuário digitou algo
         if item["obs"]:
             frase_base += f" Detalhe adicional: {item['obs']}"
 
