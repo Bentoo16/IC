@@ -8,7 +8,7 @@ import re  # Para ordenação numérica dos casos
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
-st.title("Gerador de Relatórios Multi-Casos")
+st.title("Gerador de Relatórios")
 
 # --- INICIALIZAÇÃO DA MEMÓRIA ---
 if "casos_salvos" not in st.session_state:
