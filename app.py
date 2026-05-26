@@ -23,7 +23,6 @@ perguntas = {
     "Contraste adequado": {
         "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
         "sub_opcoes": {
-            # Corrigido erro de digitação: "demias" -> "demais"
             "Contraste alto demais": "O contraste da imagem está alto demais.",
             "Contraste baixo demais": "O contraste está baixo demais."
         }
@@ -131,7 +130,7 @@ if st.button(f"Analisar e Salvar Caso {caso_atual}"):
 if st.session_state.relatorios_ia:
     st.markdown("---")
     st.header("Histórico da Sessão")
-    # Ordena os casos numericamente (Caso 1, Caso 2, ...) em vez de ordem alfabética
+    # Ordena os casos numericamente 
     def extrair_numero(nome):
         match = re.search(r'\d+', nome)
         return int(match.group()) if match else 0
@@ -148,9 +147,9 @@ if st.session_state.relatorios_ia:
 # RELATÓRIO GERAL
 if len(st.session_state.casos_salvos) >= 2:
     if st.button("Gerar Relatório Geral"):
-        # Concatena todos os casos em um texto estruturado
+        # Conecta todos os casos em um texto estruturado
         compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
-        # Prompt melhorado: instrução clara e separada dos dados
+        # Prompt 
         prompt_geral = (
             "Com base nos relatórios individuais abaixo, elabore um único parágrafo resumindo os achados gerais, "
             "sob o título 'Todos os casos'. Não mencione os números dos casos, apenas faça um resumo conciso.\n\n"
@@ -169,7 +168,7 @@ if st.session_state.relatorios_ia:
     st.header("💾 Exportar Documento")
 
     def limpar_formatacao(texto):
-        # Remove asteriscos e underscores que a IA usa para negrito/markdown
+        # Remove asteriscos e underscores que a IA usa para negrito
         return texto.replace("**", "").replace("__", "")
 
     # Prévia visual do documento (apenas na interface)
@@ -185,7 +184,7 @@ if st.session_state.relatorios_ia:
 
     def criar_docx_limpo():
         doc = Document()
-        doc.add_heading("Relatório Técnico Consolidado", 0)
+        doc.add_heading("Considerações Específicas", 0)
 
         for nome_caso in casos_ordenados:
             doc.add_heading(nome_caso, level=1)
@@ -197,7 +196,7 @@ if st.session_state.relatorios_ia:
             doc.add_paragraph("-" * 30)
 
         if st.session_state.relatorio_geral_salvo:
-            doc.add_heading("Relatório Geral de Encerramento", level=1)
+            doc.add_heading("Todos os Casos", level=1)
             for linha in st.session_state.relatorio_geral_salvo.strip().split('\n'):
                 if linha.strip():
                     doc.add_paragraph(limpar_formatacao(linha))
@@ -208,7 +207,7 @@ if st.session_state.relatorios_ia:
         return output
 
     st.download_button(
-        label="📥 Baixar Documento Final (.docx)",
+        label=" Baixar Documento Final (.docx)",
         data=criar_docx_limpo(),
         file_name="relatorio_final.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
