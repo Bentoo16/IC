@@ -46,7 +46,7 @@ perguntas = {
         "opcoes": {"Sim": "A imagem está bem saturada nas áreas escuras.",
                    "Não": "A imagem não está bem saturada nas áreas escuras."},
         "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema .",
+            "Problema A": "Frase gerada para o problema A.",
             "Problema B": "Frase gerada para o problema B."
         }
     },
@@ -59,7 +59,7 @@ perguntas = {
     },
     "A área de fundo está adequadamente escura (enegrecimento película)": {
         "opcoes": {"Sim": "A área de fundo da imagem está adequadamente escura.",
-                   "Não": "A áread e fundo da imagem não está adequadamente escura."},
+                   "Não": "A área de fundo da imagem não está adequadamente escura."},
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
             "Problema genérico B": "Frase gerada para o problema B."
