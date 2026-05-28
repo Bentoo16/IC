@@ -133,17 +133,17 @@ if st.button(f"Analisar e Salvar Caso {caso_atual}"):
         # NOVO: salva as considerações adicionais do caso
         st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
 
-        # Prepara o texto que será enviado à IA, incluindo as considerações se existirem
-        prompt_texto = texto_bruto
+        # NOVO: incorpora as considerações ao texto bruto que será enviado à IA
+        texto_para_ia = texto_bruto
         if consideracoes_caso.strip():
-            prompt_texto += f"\n\nConsiderações adicionais do avaliador: {consideracoes_caso}"
+            texto_para_ia += f"\n\n{consideracoes_caso}"  # sem rótulo, apenas o conteúdo
 
         # Tenta gerar o relatório com a IA, tratando possíveis erros
         with st.spinner("IA formatando relatório..."):
             try:
                 prompt = (
                     f"Deixe essas frases em um único texto coeso. "
-                    f"Não mude as frases, apenas deixe o texto coeso para o Caso {caso_atual}: {prompt_texto}"
+                    f"Não mude as frases, apenas deixe o texto coeso para o Caso {caso_atual}: {texto_para_ia}"
                 )
                 response = model.generate_content(prompt)
                 st.session_state.relatorios_ia[nome_caso] = response.text
@@ -153,7 +153,7 @@ if st.button(f"Analisar e Salvar Caso {caso_atual}"):
 
 # NOVO: campo para Considerações Gerais (aparece sempre abaixo do histórico)
 st.markdown("---")
-st.subheader("📝 Considerações Gerais (para o relatório consolidado)")
+st.subheader("📝 Considerações Gerais (serão incluídas em 'Todos os casos')")
 st.session_state.consideracoes_gerais = st.text_area(
     "Digite aqui observações que se aplicam a todos os casos:",
     value=st.session_state.consideracoes_gerais,
@@ -187,15 +187,16 @@ if len(st.session_state.casos_salvos) >= 2:
     if st.button("Gerar Relatório Geral"):
         # Conecta todos os casos em um texto estruturado
         compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
-        # Prompt melhorado, agora incluindo as considerações gerais se preenchidas
+        # NOVO: incorpora as considerações gerais ao texto do relatório geral
+        texto_geral_para_ia = compilado
+        if st.session_state.consideracoes_gerais.strip():
+            texto_geral_para_ia += f"\n\nConsiderações gerais do avaliador: {st.session_state.consideracoes_gerais}"
+
         prompt_geral = (
             "Com base nos relatórios individuais abaixo, elabore um único parágrafo resumindo os achados gerais, "
             "sob o título 'Todos os casos'. Não mencione os números dos casos, apenas faça um resumo conciso.\n\n"
-            f"Relatórios:\n{compilado}"
+            f"Relatórios:\n{texto_geral_para_ia}"
         )
-        if st.session_state.consideracoes_gerais.strip():
-            prompt_geral += f"\n\nConsiderações gerais do avaliador: {st.session_state.consideracoes_gerais}"
-
         try:
             response_geral = model.generate_content(prompt_geral)
             st.session_state.relatorio_geral_salvo = response_geral.text
