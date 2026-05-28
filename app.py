@@ -80,7 +80,7 @@ perguntas = {
             "Problema B": "Frase gerada para o problema B."
         }
     }
-},
+}
 
 # SELEÇÃO DE CASO
 st.markdown("---")
