@@ -10,6 +10,9 @@ model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
 st.title("Gerador de Relatórios")
 
+# NOVO TÍTULO: subtítulo fixo "Aspectos Físicos da Imagem"
+st.header("Aspectos Físicos da Imagem")
+
 # --- INICIALIZAÇÃO DA MEMÓRIA ---
 if "casos_salvos" not in st.session_state:
     st.session_state.casos_salvos = {}
