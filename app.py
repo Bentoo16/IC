@@ -144,10 +144,17 @@ if st.session_state.relatorios_ia:
 # RELATÓRIO GERAL 
 if len(st.session_state.casos_salvos) >= 2:
     if st.button(" Gerar Relatório Geral"):
+        # Cria uma string longa unindo o texto de todos os casos salvos
         compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
-        response_geral = model.generate_content(f"{compilado}, Faça agora um resumo dos casos com o nome de seção Todos os casos (não precisa dizer qual caso é qual, apenas um texto curto com um resumo de tudo serve)")
+        
+        # --- CORREÇÃO AQUI: Mudamos para usar a variável 'compilado' ---
+        prompt_final = f"Com base em todos os casos analisados anteriormente: {compilado}. Redija agora apenas a seção de 'Considerações Finais e Conclusão Técnica', sintetizando os padrões observados e fornecendo um parecer geral sobre a qualidade das imagens."
+        
+        response_geral = model.generate_content(prompt_final)
+        
+        # Salva o resumo final gerado na memória do app
         st.session_state.relatorio_geral_salvo = response_geral.text
-        st.info(st.session_state.relatorio_geral_salvo)
+        st.info(st.session_state.relatorio_geral_salvo) # Exibe o resumo na caixa azul
 
 # SISTEMA DE EXPORTAÇÃO 
 if st.session_state.relatorios_ia:
