@@ -7,7 +7,7 @@ from io import BytesIO
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
-st.title(" Gerador de Relatórios Multi-Casos")
+st.title("📝 Gerador de Relatórios Multi-Casos")
 
 # --- INICIALIZAÇÃO DA MEMÓRIA ---
 if "casos_salvos" not in st.session_state:
@@ -91,10 +91,9 @@ for titulo, info in perguntas.items():
     obs = st.text_input(f"Detalhe (opcional):", key=f"obs_{titulo}_c{caso_atual}")
     respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
-# --- NOVA ADIÇÃO: CAMPO DE DETALHE COMPLEMENTAR DO CASO ---
+# --- CAMPO DE DETALHE COMPLEMENTAR DO CASO ---
 st.markdown("---")
 st.subheader(f"📝 Considerações Adicionais do Caso {caso_atual}")
-# Este campo fica no final do formulário e serve para observações gerais sobre a imagem inteira
 detalhe_geral_caso = st.text_area(
     f"Digite observações específicas ou notas adicionais para o Caso {caso_atual} (opcional):", 
     key=f"detalhe_geral_c{caso_atual}"
@@ -106,14 +105,21 @@ if st.button(f" Analisar e Salvar Caso {caso_atual}"):
     
     for item in respostas_temporarias:
         info_pergunta = perguntas[item["titulo"]]
-        frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]] if item["escolha"] == "Não" and item["sub_escolha"] else info_pergunta["opcoes"][item["escolha"]]
-        if item["obs"]: frase_base += f" Detalhe adicional: {item['obs']}"
+        
+        # Correção segura para buscar subopções sem quebrar o código
+        if item["escolha"] == "Não" and "sub_opcoes" in info_pergunta and item["sub_escolha"]:
+            frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
+        else:
+            frase_base = info_pergunta["opcoes"][item["escolha"]]
+            
+        if item["obs"]: 
+            frase_base += f" Detalhe adicional: {item['obs']}"
         respostas_finais.append(frase_base)
 
     # Junta todas as respostas das perguntas comuns
     texto_bruto = " ".join(respostas_finais)
     
-    # --- NOVA ADIÇÃO: JUNTANDO O DETALHE GERAL NO FINAL DO TEXTO BRUTO ---
+    # Juntando o detalhe geral no final do texto bruto
     if detalhe_geral_caso:
         texto_bruto += f" Considerações complementares do caso: {detalhe_geral_caso}"
         
@@ -144,17 +150,13 @@ if st.session_state.relatorios_ia:
 # RELATÓRIO GERAL 
 if len(st.session_state.casos_salvos) >= 2:
     if st.button(" Gerar Relatório Geral"):
-        # Cria uma string longa unindo o texto de todos os casos salvos
         compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
         
-        # --- CORREÇÃO AQUI: Mudamos para usar a variável 'compilado' ---
-        prompt_final = f"Com base em todos os casos analisados anteriormente: {compilado}. Redija agora apenas a seção de 'Considerações Finais e Conclusão Técnica', sintetizando os padrões observados e fornecendo um parecer geral sobre a qualidade das imagens."
+        prompt_final = f"Com base em todos os casos analisados anteriormente: {compilado}. Redija agora apenas a seção de 'Considerações Finais e Conclusão Técnico-Científica', sintetizando de forma direta e simples os padrões observados e fornecendo um parecer geral sobre a qualidade das imagens."
         
         response_geral = model.generate_content(prompt_final)
-        
-        # Salva o resumo final gerado na memória do app
         st.session_state.relatorio_geral_salvo = response_geral.text
-        st.info(st.session_state.relatorio_geral_salvo) # Exibe o resumo na caixa azul
+        st.info(st.session_state.relatorio_geral_salvo)
 
 # SISTEMA DE EXPORTAÇÃO 
 if st.session_state.relatorios_ia:
@@ -164,7 +166,6 @@ if st.session_state.relatorios_ia:
     def limpar_formatacao(texto):
         return texto.replace("**", "").replace("__", "")
         
-    # --- BLOCO DA PRÉVIA ---
     with st.expander(" Visualizar Prévia do Documento", expanded=True):
         st.markdown("### PRÉVIA DO DOCUMENTO (Como ficará no Word)")
         for nome_caso in sorted(st.session_state.relatorios_ia.keys()):
