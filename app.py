@@ -2,27 +2,28 @@ import streamlit as st
 import google.generativeai as genai
 from docx import Document
 from io import BytesIO
+import re  # Para ordenação numérica dos casos
 
-# 1. Configuração da IA 
+# 1. Configuração da IA
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel('gemini-1.5-flash-latest')
+model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
-st.title("📝 Gerador de Relatórios Multi-Casos")
+st.title("Gerador de Relatórios")
 
 # --- INICIALIZAÇÃO DA MEMÓRIA ---
 if "casos_salvos" not in st.session_state:
-    st.session_state.casos_salvos = {} 
+    st.session_state.casos_salvos = {}
 if "relatorios_ia" not in st.session_state:
-    st.session_state.relatorios_ia = {} 
+    st.session_state.relatorios_ia = {}
 if "relatorio_geral_salvo" not in st.session_state:
-    st.session_state.relatorio_geral_salvo = None 
+    st.session_state.relatorio_geral_salvo = None
 
 # 2. Biblioteca de Perguntas
 perguntas = {
     "Contraste adequado": {
         "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
         "sub_opcoes": {
-            "Contraste alto demias": "O contraste da imagem está alto demais.",
+            "Contraste alto demais": "O contraste da imagem está alto demais.",
             "Contraste baixo demais": "O contraste está baixo demais."
         }
     },
@@ -76,99 +77,115 @@ perguntas = {
 
 # SELEÇÃO DE CASO
 st.markdown("---")
-caso_atual = st.selectbox(" Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
+caso_atual = st.selectbox("Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
 
 # 3. Interface de Perguntas
-respostas_temporarias = [] 
+respostas_temporarias = []
 for titulo, info in perguntas.items():
-    st.subheader(titulo) 
+    st.subheader(titulo)
     escolha = st.radio(f"Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}")
-    
     sub_escolha = None
     if "sub_opcoes" in info and escolha == "Não":
         sub_escolha = st.radio(f"Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
-    
-    obs = st.text_input(f"Detalhe (opcional):", key=f"obs_{titulo}_c{caso_atual}")
+    obs = st.text_input(f"Considerações adicionais: ", key=f"obs_{titulo}_c{caso_atual}")
     respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
-# --- CAMPO DE DETALHE COMPLEMENTAR DO CASO ---
-st.markdown("---")
-st.subheader(f"📝 Considerações Adicionais do Caso {caso_atual}")
-detalhe_geral_caso = st.text_area(
-    f"Digite observações específicas ou notas adicionais para o Caso {caso_atual} (opcional):", 
-    key=f"detalhe_geral_c{caso_atual}"
-)
+# 4. Lógica ao Salvar
+# Verifica se o caso já existe para pedir confirmação de sobrescrita
+nome_caso = f"Caso {caso_atual}"
+caso_ja_existe = nome_caso in st.session_state.casos_salvos
+confirmacao = True  # por padrão permite salvar se for novo
+if caso_ja_existe:
+    st.warning(f"O {nome_caso} já foi salvo anteriormente.")
+    confirmacao = st.checkbox("Deseja sobrescrever o relatório existente?", key=f"conf_{caso_atual}")
 
-# 4. Lógica ao Salvar 
-if st.button(f" Analisar e Salvar Caso {caso_atual}"):
-    respostas_finais = [] 
-    
-    for item in respostas_temporarias:
-        info_pergunta = perguntas[item["titulo"]]
-        
-        # Correção segura para buscar subopções sem quebrar o código
-        if item["escolha"] == "Não" and "sub_opcoes" in info_pergunta and item["sub_escolha"]:
-            frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
-        else:
-            frase_base = info_pergunta["opcoes"][item["escolha"]]
+if st.button(f"Analisar e Salvar Caso {caso_atual}"):
+    if caso_ja_existe and not confirmacao:
+        st.warning("Marque a confirmação para sobrescrever o caso.")
+    else:
+        # Monta as respostas finais a partir das escolhas de forma segura
+        respostas_finais = []
+        for item in respostas_temporarias:
+            info_pergunta = perguntas[item["titulo"]]
             
-        if item["obs"]: 
-            frase_base += f" Detalhe adicional: {item['obs']}"
-        respostas_finais.append(frase_base)
+            # --- TRATAMENTO SEGURO ANTI-KEYERROR ---
+            # Verifica se foi marcado 'Não', se a pergunta tem sub_opcoes e se a sub_escolha existe no dicionário
+            if item["escolha"] == "Não" and "sub_opcoes" in info_pergunta and item["sub_escolha"] in info_pergunta["sub_opcoes"]:
+                frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
+            else:
+                # Se der qualquer inconsistência ou for 'Sim', busca nas opções padrão de Sim/Não
+                frase_base = info_pergunta["opcoes"].get(item["escolha"], "")
+            
+            # Adiciona a observação textual digitada se houver
+            if item["obs"].strip():
+                frase_base += f" Detalhe adicional: {item['obs'].strip()}"
+                
+            if frase_base:
+                respostas_finais.append(frase_base)
 
-    # Junta todas as respostas das perguntas comuns
-    texto_bruto = " ".join(respostas_finais)
-    
-    # Juntando o detalhe geral no final do texto bruto
-    if detalhe_geral_caso:
-        texto_bruto += f" Considerações complementares do caso: {detalhe_geral_caso}"
-        
-    st.session_state.casos_salvos[f"Caso {caso_atual}"] = texto_bruto
-    
-    # EXIBIÇÃO DO TEXTO BRUTO NA TELA 
-    st.markdown(f"### 📋 Texto Bruto do Caso {caso_atual}:")
-    st.warning(texto_bruto)
+        texto_bruto = " ".join(respostas_finais)
+        # Salva o texto bruto no estado da sessão
+        st.session_state.casos_salvos[nome_caso] = texto_bruto
 
-    with st.spinner("IA formatando relatório..."):
-        prompt = f"Deixe essas frases em um único texto coeso. Não mude as frases, apenas deixe o texto coeso para o Caso {caso_atual}: {texto_bruto}"
-        response = model.generate_content(prompt)
-        st.session_state.relatorios_ia[f"Caso {caso_atual}"] = response.text
-        st.success(f"Caso {caso_atual} processado!")
+        # Tenta gerar o relatório com a IA, tratando possíveis erros
+        with st.spinner("IA formatando relatório..."):
+            try:
+                prompt = f"Deixe essas frases em um único texto coeso. Não mude as frases, apenas deixe o texto coeso para o Caso {caso_atual}: {texto_bruto}"
+                response = model.generate_content(prompt)
+                st.session_state.relatorios_ia[nome_caso] = response.text
+                st.success(f"Caso {caso_atual} processado!")
+            except Exception as e:
+                st.error(f"Erro ao gerar relatório: {e}")
 
-# HISTÓRICO NA TELA
+# HISTÓRICO NA TELA (Texto bruto aparece somente aqui)
 if st.session_state.relatorios_ia:
     st.markdown("---")
-    st.header(" Histórico da Sessão")
-    abas = st.tabs(list(st.session_state.relatorios_ia.keys()))
-    for i, nome_caso in enumerate(st.session_state.relatorios_ia.keys()):
+    st.header("Histórico da Sessão")
+    # Ordena os casos numericamente
+    def extrair_numero(nome):
+        match = re.search(r'\d+', nome)
+        return int(match.group()) if match else 0
+
+    casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
+    abas = st.tabs(casos_ordenados)
+    for i, nome_caso in enumerate(casos_ordenados):
         with abas[i]:
             st.write("**Texto Bruto:**")
             st.caption(st.session_state.casos_salvos[nome_caso])
             st.write("**Relatório IA:**")
             st.write(st.session_state.relatorios_ia[nome_caso])
 
-# RELATÓRIO GERAL 
+# RELATÓRIO GERAL
 if len(st.session_state.casos_salvos) >= 2:
-    if st.button(" Gerar Relatório Geral"):
+    if st.button("Gerar Relatório Geral"):
+        # Conecta todos os casos em um texto estruturado
         compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
-        
-        prompt_final = f"Com base em todos os casos analisados anteriormente: {compilado}. Redija agora apenas a seção de 'Considerações Finais e Conclusão Técnico-Científica', sintetizando de forma direta e simples os padrões observados e fornecendo um parecer geral sobre a qualidade das imagens."
-        
-        response_geral = model.generate_content(prompt_final)
-        st.session_state.relatorio_geral_salvo = response_geral.text
-        st.info(st.session_state.relatorio_geral_salvo)
+        # Prompt
+        prompt_geral = (
+            "Com base nos relatórios individuais abaixo, elabore um único parágrafo resumindo os achados gerais, "
+            "sob o título 'Todos os casos'. Não mencione os números dos casos, apenas faça um resumo conciso.\n\n"
+            f"Relatórios:\n{compilado}"
+        )
+        try:
+            response_geral = model.generate_content(prompt_geral)
+            st.session_state.relatorio_geral_salvo = response_geral.text
+            st.info(st.session_state.relatorio_geral_salvo)
+        except Exception as e:
+            st.error(f"Erro ao gerar relatório geral: {e}")
 
-# SISTEMA DE EXPORTAÇÃO 
+# SISTEMA DE EXPORTAÇÃO
 if st.session_state.relatorios_ia:
     st.markdown("---")
     st.header("💾 Exportar Documento")
 
     def limpar_formatacao(texto):
+        # Remove asteriscos e underscores que a IA usa para negrito
         return texto.replace("**", "").replace("__", "")
-        
-    with st.expander(" Visualizar Prévia do Documento", expanded=True):
+
+    # Prévia visual do documento (apenas na interface)
+    with st.expander("Visualizar Prévia do Documento", expanded=True):
         st.markdown("### PRÉVIA DO DOCUMENTO (Como ficará no Word)")
-        for nome_caso in sorted(st.session_state.relatorios_ia.keys()):
+        for nome_caso in casos_ordenados:  # Reutiliza a ordenação numérica
             st.markdown(f"**{nome_caso}**")
             st.write(st.session_state.relatorios_ia[nome_caso])
             st.markdown("---")
@@ -177,18 +194,23 @@ if st.session_state.relatorios_ia:
             st.write(st.session_state.relatorio_geral_salvo)
 
     def criar_docx_limpo():
-        doc = Document() 
-        doc.add_heading("Relatório Técnico Consolidado", 0) 
+        doc = Document()
+        doc.add_heading("Considerações Específicas", 0)
 
-        for nome_caso in sorted(st.session_state.relatorios_ia.keys()):
+        for nome_caso in casos_ordenados:
             doc.add_heading(nome_caso, level=1)
             texto_ia = st.session_state.relatorios_ia[nome_caso]
-            doc.add_paragraph(limpar_formatacao(texto_ia)) 
-            doc.add_paragraph("-" * 30) 
+            # Preserva quebras de linha: cada linha vira um parágrafo separado
+            for linha in texto_ia.strip().split('\n'):
+                if linha.strip():
+                    doc.add_paragraph(limpar_formatacao(linha))
+            doc.add_paragraph("-" * 30)
 
         if st.session_state.relatorio_geral_salvo:
-            doc.add_heading("Relatório Geral de Encerramento", level=1)
-            doc.add_paragraph(limpar_formatacao(st.session_state.relatorio_geral_salvo))
+            doc.add_heading("Todos os Casos", level=1)
+            for linha in st.session_state.relatorio_geral_salvo.strip().split('\n'):
+                if linha.strip():
+                    doc.add_paragraph(limpar_formatacao(linha))
 
         output = BytesIO()
         doc.save(output)
@@ -196,8 +218,17 @@ if st.session_state.relatorios_ia:
         return output
 
     st.download_button(
-        label="📥 Baixar Documento Final (.docx)",
+        label="Baixar Documento Final (.docx)",
         data=criar_docx_limpo(),
         file_name="relatorio_final.docx",
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
+
+# BOTÃO DE RESET (limpar toda a sessão)
+st.markdown("---")
+if st.button("🗑️ Limpar todos os casos"):
+    # Remove as chaves do session_state relacionadas aos relatórios
+    for chave in ["casos_salvos", "relatorios_ia", "relatorio_geral_salvo"]:
+        if chave in st.session_state:
+            del st.session_state[chave]
+    st.rerun()
