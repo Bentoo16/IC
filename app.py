@@ -12,7 +12,7 @@ st.title("Gerador de Relatórios")
 st.header("Aspectos Físicos da Imagem")
 
 # ============================================================
-# NOVO – CABEÇALHO: dados da instituição e mamógrafo
+# CABEÇALHO: dados da instituição e mamógrafo
 # ============================================================
 if "dados_cabecalho" not in st.session_state:
     st.session_state.dados_cabecalho = {
@@ -83,7 +83,7 @@ if "consideracoes_gerais" not in st.session_state:
 if "escolhas_casos" not in st.session_state:
     st.session_state.escolhas_casos = {}
 
-# 2. Biblioteca de Perguntas (inalterada)
+# 2. Biblioteca de Perguntas
 perguntas = {
     "Contraste adequado": {
         "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
@@ -258,10 +258,34 @@ if len(st.session_state.casos_salvos) >= 2:
             st.session_state.relatorio_geral_salvo = response_geral.text
             st.info(st.session_state.relatorio_geral_salvo)
 
-            # Tabela HTML (já implementada antes, omitida aqui por brevidade – manter igual)
+            # Tabela HTML mesclada (Streamlit)
             st.markdown("---")
             st.subheader("📊 Tabela de Respostas (Sim/Não)")
-            # ... (código da tabela HTML, igual ao fornecido)
+
+            casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
+            perguntas_ordenadas = list(perguntas.keys())
+
+            html = "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>"
+            html += "<tr><th rowspan='2'>Pergunta</th>"
+            for caso in casos_ordenados:
+                html += f"<th colspan='2'>{caso}</th>"
+            html += "</tr>"
+            html += "<tr>"
+            for _ in casos_ordenados:
+                html += "<th>Sim</th><th>Não</th>"
+            html += "</tr>"
+            for pergunta in perguntas_ordenadas:
+                html += "<tr>"
+                html += f"<td style='text-align: left;'>{pergunta}</td>"
+                for caso in casos_ordenados:
+                    escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
+                    sim_x = "X" if escolha == "Sim" else ""
+                    nao_x = "X" if escolha == "Não" else ""
+                    html += f"<td>{sim_x}</td><td>{nao_x}</td>"
+                html += "</tr>"
+            html += "</table>"
+            st.markdown(html, unsafe_allow_html=True)
+
         except Exception as e:
             st.error(f"Erro ao gerar relatório geral: {e}")
 
@@ -273,7 +297,7 @@ if st.session_state.relatorios_ia:
     def limpar_formatacao(texto):
         return texto.replace("**", "").replace("__", "")
 
-    # Prévia (incluir cabeçalho + tabela HTML + conteúdo)
+    # Prévia do documento
     with st.expander("Visualizar Prévia do Documento", expanded=True):
         st.markdown("### PRÉVIA DO DOCUMENTO")
         st.markdown("**Cabeçalho:**")
@@ -284,8 +308,32 @@ if st.session_state.relatorios_ia:
         st.write(f"**Instituição:** {cab['instituicao']}")
         st.write(f"**Cidade/Estado:** {cab['cidade']} – {cab['estado']}")
         st.markdown("---")
-        # Tabela HTML (mesma da anterior)
-        # ...
+
+        # Prévia da tabela HTML
+        st.markdown("**Tabela de Respostas**")
+        casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
+        perguntas_ordenadas = list(perguntas.keys())
+        html = "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>"
+        html += "<tr><th rowspan='2'>Pergunta</th>"
+        for caso in casos_ordenados:
+            html += f"<th colspan='2'>{caso}</th>"
+        html += "</tr>"
+        html += "<tr>"
+        for _ in casos_ordenados:
+            html += "<th>Sim</th><th>Não</th>"
+        html += "</tr>"
+        for pergunta in perguntas_ordenadas:
+            html += "<tr>"
+            html += f"<td style='text-align: left;'>{pergunta}</td>"
+            for caso in casos_ordenados:
+                escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
+                sim_x = "X" if escolha == "Sim" else ""
+                nao_x = "X" if escolha == "Não" else ""
+                html += f"<td>{sim_x}</td><td>{nao_x}</td>"
+            html += "</tr>"
+        html += "</table>"
+        st.markdown(html, unsafe_allow_html=True)
+
         st.markdown("---")
         for nome_caso in casos_ordenados:
             st.markdown(f"**{nome_caso}**")
@@ -304,26 +352,22 @@ if st.session_state.relatorios_ia:
     def criar_docx_limpo():
         doc = Document()
 
-        # ============================================================
-        # NOVO – CABEÇALHO no Word (primeira página)
-        # ============================================================
+        # Cabeçalho no Word
         doc.add_heading("Instrumento para a análise da qualidade da mamografia", level=0)
-        doc.add_paragraph()  # espaço
+        doc.add_paragraph()
 
         cab = st.session_state.dados_cabecalho
-        # Mamógrafo
+
         p = doc.add_paragraph()
         p.add_run("Mamógrafo (fabricante e modelo): ").bold = True
         p.add_run(f"{cab['mamografo_fabricante']} – {cab['mamografo_modelo']}")
 
-        # CNES e QIID
         p = doc.add_paragraph()
         p.add_run("CNES: ").bold = True
         p.add_run(cab['cnes'])
         p.add_run("     QIID: ").bold = True
         p.add_run(cab['qiid'])
 
-        # Tipo de mamógrafo (com quadradinho marcado)
         p = doc.add_paragraph()
         p.add_run("Tipo de mamógrafo: ").bold = True
         opcoes_tipo = ["Convencional", "Digital CR", "Digital DR", "DR retrofit"]
@@ -331,31 +375,87 @@ if st.session_state.relatorios_ia:
             marcado = "☒" if cab['tipo_mamografo'] == opcao else "☐"
             p.add_run(f"  {marcado} {opcao}  ")
 
-        doc.add_paragraph()  # linha em branco
+        doc.add_paragraph()
 
-        # Instituição
         p = doc.add_paragraph()
         p.add_run("Instituição: ").bold = True
         p.add_run(cab['instituicao'])
 
-        # Cidade e Estado
         p = doc.add_paragraph()
         p.add_run("Cidade: ").bold = True
         p.add_run(cab['cidade'])
         p.add_run("     Estado: ").bold = True
         p.add_run(cab['estado'])
 
-        doc.add_page_break()  # Opcional: força quebra de página antes da tabela
-        # ============================================================
-        # FIM DO CABEÇALHO
-        # ============================================================
+        doc.add_page_break()
 
-        # Tabela de respostas (já existente)
+        # Tabela de respostas (mesclada) no Word
         doc.add_heading("Tabela de Respostas (Sim/Não)", level=1)
-        # ... (código da tabela no Word, mantido igual) ...
 
-        # Restante do conteúdo (Considerações Específicas, etc.)
-        # ...
+        casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
+        perguntas_ordenadas = list(perguntas.keys())
+        num_casos = len(casos_ordenados)
+        total_colunas = 1 + num_casos * 2
+
+        tabela = doc.add_table(rows=2 + len(perguntas_ordenadas), cols=total_colunas)
+        tabela.style = 'Table Grid'
+
+        tabela.cell(0, 0).merge(tabela.cell(1, 0))
+        tabela.cell(0, 0).text = "Pergunta"
+
+        for idx, caso in enumerate(casos_ordenados):
+            col_inicio = 1 + idx * 2
+            col_fim = col_inicio + 1
+            tabela.cell(0, col_inicio).merge(tabela.cell(0, col_fim))
+            tabela.cell(0, col_inicio).text = caso
+
+        for idx in range(num_casos):
+            col_sim = 1 + idx * 2
+            col_nao = col_sim + 1
+            tabela.cell(1, col_sim).text = "Sim"
+            tabela.cell(1, col_nao).text = "Não"
+
+        for i, pergunta in enumerate(perguntas_ordenadas):
+            linha_atual = i + 2
+            tabela.cell(linha_atual, 0).text = pergunta
+            for j, caso in enumerate(casos_ordenados):
+                escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
+                col_sim = 1 + j * 2
+                col_nao = col_sim + 1
+                if escolha == "Sim":
+                    tabela.cell(linha_atual, col_sim).text = "X"
+                    tabela.cell(linha_atual, col_nao).text = ""
+                elif escolha == "Não":
+                    tabela.cell(linha_atual, col_sim).text = ""
+                    tabela.cell(linha_atual, col_nao).text = "X"
+                else:
+                    tabela.cell(linha_atual, col_sim).text = ""
+                    tabela.cell(linha_atual, col_nao).text = ""
+
+        doc.add_paragraph()
+
+        # Considerações específicas por caso
+        doc.add_heading("Considerações Específicas", level=0)
+        for nome_caso in casos_ordenados:
+            doc.add_heading(nome_caso, level=1)
+            texto_ia = st.session_state.relatorios_ia[nome_caso]
+            for linha in texto_ia.strip().split('\n'):
+                if linha.strip():
+                    doc.add_paragraph(limpar_formatacao(linha))
+            if nome_caso in st.session_state.consideracoes_caso and st.session_state.consideracoes_caso[nome_caso].strip():
+                doc.add_heading("Considerações Adicionais", level=2)
+                doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_caso[nome_caso]))
+            doc.add_paragraph("-" * 30)
+
+        if st.session_state.relatorio_geral_salvo:
+            doc.add_heading("Todos os Casos", level=1)
+            for linha in st.session_state.relatorio_geral_salvo.strip().split('\n'):
+                if linha.strip():
+                    doc.add_paragraph(limpar_formatacao(linha))
+
+        if st.session_state.consideracoes_gerais.strip():
+            doc.add_heading("Considerações Gerais do Avaliador", level=1)
+            doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_gerais))
 
         output = BytesIO()
         doc.save(output)
@@ -369,7 +469,7 @@ if st.session_state.relatorios_ia:
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
-# BOTÃO DE RESET (incluir a nova chave)
+# BOTÃO DE RESET
 st.markdown("---")
 if st.button("🗑️ Limpar todos os casos"):
     for chave in ["casos_salvos", "relatorios_ia", "relatorio_geral_salvo", "consideracoes_caso",
