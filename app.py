@@ -4,17 +4,11 @@ from docx import Document
 from io import BytesIO
 import re
 
+# Configuração da IA
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
 st.title("Gerador de Relatórios")
-
-# ------------------------------------------------------------
-# Função auxiliar (definida no topo para estar sempre disponível)
-# ------------------------------------------------------------
-def extrair_numero(nome):
-    match = re.search(r'\d+', nome)
-    return int(match.group()) if match else 0
 
 # ------------------------------------------------------------
 # Inicialização do session_state
@@ -36,10 +30,10 @@ if "relatorios_ia" not in st.session_state:
     st.session_state.relatorios_ia = {}
 if "relatorio_geral_salvo" not in st.session_state:
     st.session_state.relatorio_geral_salvo = None
-if "consideracoes_caso_grupo" not in st.session_state:
-    st.session_state.consideracoes_caso_grupo = {}
-if "consideracoes_gerais_grupo" not in st.session_state:
-    st.session_state.consideracoes_gerais_grupo = {}
+if "consideracoes_caso" not in st.session_state:
+    st.session_state.consideracoes_caso = {}
+if "consideracoes_gerais" not in st.session_state:
+    st.session_state.consideracoes_gerais = ""
 if "escolhas_casos" not in st.session_state:
     st.session_state.escolhas_casos = {}
 if "identificacao_exames" not in st.session_state:
@@ -88,121 +82,84 @@ st.session_state.dados_cabecalho = {
 }
 
 # ------------------------------------------------------------
-# Definição dos grupos de perguntas
+# Biblioteca de perguntas
 # ------------------------------------------------------------
-grupos_perguntas = [
-    {
-        "titulo": "Aspectos Físicos da Imagem",
-        "perguntas": {
-            "Contraste adequado": {
-                "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
-                "sub_opcoes": {
-                    "Contraste alto demais": "O contraste da imagem está alto demais.",
-                    "Contraste baixo demais": "O contraste está baixo demais."
-                }
-            },
-            "Definição de estruturas": {
-                "opcoes": {"Sim": "As estruturas estão bem definidas na imagem.",
-                           "Não": "As estruturas não estão bem definidas na imagem."},
-                "sub_opcoes": {
-                    "Problema A": "Frase gerada para o problema A.",
-                    "Problema B": "Frase gerada para o problema B."
-                }
-            },
-            "Saturação correta nas áreas claras": {
-                "opcoes": {"Sim": "A imagem está bem saturada nas áreas claras.",
-                           "Não": "A imagem não está bem saturada nas áreas claras."},
-                "sub_opcoes": {
-                    "Problema A": "Frase gerada para o problema A.",
-                    "Problema B": "Frase gerada para o problema B."
-                }
-            },
-            "Saturação correta nas áreas escuras": {
-                "opcoes": {"Sim": "A imagem está bem saturada nas áreas escuras.",
-                           "Não": "A imagem não está bem saturada nas áreas escuras."},
-                "sub_opcoes": {
-                    "Problema A": "Frase gerada para o problema A.",
-                    "Problema B": "Frase gerada para o problema B."
-                }
-            },
-            "Imagem sem ruído": {
-                "opcoes": {"Sim": "A imagem está sem ruído.", "Não": "A imagem está com ruído."},
-                "sub_opcoes": {
-                    "Problema A": "Frase gerada para o problema A.",
-                    "Problema B": "Frase gerada para o problema B."
-                }
-            },
-            "A área de fundo está adequadamente escura (enegrecimento película)": {
-                "opcoes": {"Sim": "A área de fundo da imagem está adequadamente escura.",
-                           "Não": "A área de fundo da imagem não está adequadamente escura."},
-                "sub_opcoes": {
-                    "Problema A": "Frase gerada para o problema A.",
-                    "Problema genérico B": "Frase gerada para o problema B."
-                }
-            },
-            "Imagem sem artefatos (se houver, descrever)": {
-                "opcoes": {"Sim": "A imagem não possui artefatos.", "Não": "A imagem possui artefatos."},
-                "sub_opcoes": {
-                    "Problema A": "Frase gerada para o problema A.",
-                    "Problema B": "Frase gerada para o problema B."
-                }
-            }
+perguntas = {
+    "Contraste adequado": {
+        "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
+        "sub_opcoes": {
+            "Contraste alto demais": "O contraste da imagem está alto demais.",
+            "Contraste baixo demais": "O contraste está baixo demais."
         }
     },
-    {
-        "titulo": "Avaliação dos Critérios e laudos",
-        "perguntas": {
-            "Critério 1": {
-                "opcoes": {"Sim": "Critério 1 atendido.", "Não": "Critério 1 não atendido."},
-                "sub_opcoes": {}
-            },
-            "Critério 2": {
-                "opcoes": {"Sim": "Critério 2 atendido.", "Não": "Critério 2 não atendido."},
-                "sub_opcoes": {}
-            },
-            "Critério 3": {
-                "opcoes": {"Sim": "Critério 3 atendido.", "Não": "Critério 3 não atendido."},
-                "sub_opcoes": {}
-            }
+    "Definição de estruturas": {
+        "opcoes": {"Sim": "As estruturas estão bem definidas na imagem.",
+                   "Não": "As estruturas não estão bem definidas na imagem."},
+        "sub_opcoes": {
+            "Problema A": "Frase gerada para o problema A.",
+            "Problema B": "Frase gerada para o problema B."
+        }
+    },
+    "Saturação correta nas áreas claras": {
+        "opcoes": {"Sim": "A imagem está bem saturada nas áreas claras.",
+                   "Não": "A imagem não está bem saturada nas áreas claras."},
+        "sub_opcoes": {
+            "Problema A": "Frase gerada para o problema A.",
+            "Problema B": "Frase gerada para o problema B."
+        }
+    },
+    "Saturação correta nas áreas escuras": {
+        "opcoes": {"Sim": "A imagem está bem saturada nas áreas escuras.",
+                   "Não": "A imagem não está bem saturada nas áreas escuras."},
+        "sub_opcoes": {
+            "Problema A": "Frase gerada para o problema A.",
+            "Problema B": "Frase gerada para o problema B."
+        }
+    },
+    "Imagem sem ruído": {
+        "opcoes": {"Sim": "A imagem está sem ruído.", "Não": "A imagem está com ruído."},
+        "sub_opcoes": {
+            "Problema A": "Frase gerada para o problema A.",
+            "Problema B": "Frase gerada para o problema B."
+        }
+    },
+    "A área de fundo está adequadamente escura (enegrecimento película)": {
+        "opcoes": {"Sim": "A área de fundo da imagem está adequadamente escura.",
+                   "Não": "A área de fundo da imagem não está adequadamente escura."},
+        "sub_opcoes": {
+            "Problema A": "Frase gerada para o problema A.",
+            "Problema genérico B": "Frase gerada para o problema B."
+        }
+    },
+    "Imagem sem artefatos (se houver, descrever)": {
+        "opcoes": {"Sim": "A imagem não possui artefatos.", "Não": "A imagem possui artefatos."},
+        "sub_opcoes": {
+            "Problema A": "Frase gerada para o problema A.",
+            "Problema B": "Frase gerada para o problema B."
         }
     }
-]
+}
 
 # ------------------------------------------------------------
-# Seleção do caso e exibição dos grupos
+# Seleção do caso e perguntas
 # ------------------------------------------------------------
 st.markdown("---")
 caso_atual = st.selectbox("Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
 
+# Título do grupo de perguntas (movido para cá)
+st.header("Aspectos Físicos da Imagem")
+
 respostas_temporarias = []
-consideracoes_grupo_temp = {}
+for titulo, info in perguntas.items():
+    st.subheader(titulo)
+    escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}")
+    sub_escolha = None
+    if "sub_opcoes" in info and escolha == "Não":
+        sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
+    obs = st.text_input("Considerações adicionais: ", key=f"obs_{titulo}_c{caso_atual}")
+    respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
-for grupo in grupos_perguntas:
-    with st.expander(grupo["titulo"], expanded=False):
-        for titulo, info in grupo["perguntas"].items():
-            st.markdown(f"**{titulo}**")
-            escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{grupo['titulo']}_{titulo}_c{caso_atual}")
-            sub_escolha = None
-            if "sub_opcoes" in info and escolha == "Não":
-                sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{grupo['titulo']}_{titulo}_c{caso_atual}")
-            obs = st.text_input("Observação: ", key=f"obs_{grupo['titulo']}_{titulo}_c{caso_atual}")
-            respostas_temporarias.append({
-                "titulo": titulo,
-                "grupo": grupo["titulo"],
-                "escolha": escolha,
-                "sub_escolha": sub_escolha,
-                "obs": obs
-            })
-        chave_grupo = grupo["titulo"]
-        texto_padrao = st.session_state.consideracoes_caso_grupo.get(f"Caso {caso_atual}", {}).get(chave_grupo, "")
-        cons_grupo = st.text_area(
-            f"Considerações adicionais para este grupo ({chave_grupo}):",
-            value=texto_padrao,
-            key=f"cons_grupo_{chave_grupo}_c{caso_atual}",
-            height=100
-        )
-        consideracoes_grupo_temp[chave_grupo] = cons_grupo
-
+# Identificação do exame
 st.markdown("---")
 id_exame = st.text_input(
     "Identificação do Exame:",
@@ -210,8 +167,17 @@ id_exame = st.text_input(
     key=f"id_exame_c{caso_atual}"
 )
 
+# Considerações adicionais do caso
+st.markdown("---")
+consideracoes_caso = st.text_area(
+    "📝 Considerações adicionais para este caso (opcional):",
+    value=st.session_state.consideracoes_caso.get(f"Caso {caso_atual}", ""),
+    key=f"consideracoes_c{caso_atual}",
+    height=120
+)
+
 # ------------------------------------------------------------
-# Salvamento do caso (sem IA)
+# Lógica de salvamento do caso
 # ------------------------------------------------------------
 nome_caso = f"Caso {caso_atual}"
 caso_ja_existe = nome_caso in st.session_state.casos_salvos
@@ -220,64 +186,67 @@ if caso_ja_existe:
     st.warning(f"O {nome_caso} já foi salvo anteriormente.")
     confirmacao = st.checkbox("Deseja sobrescrever o relatório existente?", key=f"conf_{caso_atual}")
 
-if st.button(f"Salvar Caso {caso_atual}"):
+if st.button(f"Analisar e Salvar Caso {caso_atual}"):
     if caso_ja_existe and not confirmacao:
         st.warning("Marque a confirmação para sobrescrever o caso.")
     else:
-        texto_bruto = ""
-        for grupo in grupos_perguntas:
-            respostas_grupo = []
-            for item in respostas_temporarias:
-                if item["grupo"] == grupo["titulo"]:
-                    info_pergunta = grupo["perguntas"][item["titulo"]]
-                    frase = info_pergunta["sub_opcoes"][item["sub_escolha"]] if item["escolha"] == "Não" and item["sub_escolha"] else info_pergunta["opcoes"][item["escolha"]]
-                    if item["obs"]:
-                        frase += f" Detalhe: {item['obs']}"
-                    respostas_grupo.append(frase)
-            bloco_grupo = " ".join(respostas_grupo)
-            cons = consideracoes_grupo_temp.get(grupo["titulo"], "")
-            if cons.strip():
-                bloco_grupo += f" Considerações adicionais do grupo '{grupo['titulo']}': {cons}"
-            texto_bruto += bloco_grupo + " "
+        respostas_finais = []
+        for item in respostas_temporarias:
+            info_pergunta = perguntas[item["titulo"]]
+            frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]] if item["escolha"] == "Não" and item["sub_escolha"] else info_pergunta["opcoes"][item["escolha"]]
+            if item["obs"]:
+                frase_base += f" Detalhe adicional: {item['obs']}"
+            respostas_finais.append(frase_base)
 
-        st.session_state.casos_salvos[nome_caso] = texto_bruto.strip()
-
-        if nome_caso not in st.session_state.consideracoes_caso_grupo:
-            st.session_state.consideracoes_caso_grupo[nome_caso] = {}
-        for grupo_nome, texto in consideracoes_grupo_temp.items():
-            st.session_state.consideracoes_caso_grupo[nome_caso][grupo_nome] = texto
-
+        texto_bruto = " ".join(respostas_finais)
+        st.session_state.casos_salvos[nome_caso] = texto_bruto
+        st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
         st.session_state.identificacao_exames[nome_caso] = id_exame
 
         escolhas = {}
         for item in respostas_temporarias:
-            chave_pergunta = f"{item['grupo']}||{item['titulo']}"
-            escolhas[chave_pergunta] = item["escolha"]
+            escolhas[item["titulo"]] = item["escolha"]
         st.session_state.escolhas_casos[nome_caso] = escolhas
 
-        st.success(f"Caso {caso_atual} salvo! Use 'Gerar Relatório Geral' para processar com IA.")
+        texto_para_ia = texto_bruto
+        if consideracoes_caso.strip():
+            texto_para_ia += f"\n\n{consideracoes_caso}"
+
+        with st.spinner("IA formatando relatório..."):
+            try:
+                prompt = (
+                    f"Deixe essas frases em um único texto coeso. "
+                    f"Não mude as frases, apenas deixe o texto coeso para o Caso {caso_atual}: {texto_para_ia}"
+                )
+                response = model.generate_content(prompt)
+                st.session_state.relatorios_ia[nome_caso] = response.text
+                st.success(f"Caso {caso_atual} processado!")
+            except Exception as e:
+                st.error(f"Erro ao gerar relatório: {e}")
 
 # ------------------------------------------------------------
-# Considerações gerais por grupo
+# Considerações gerais
 # ------------------------------------------------------------
 st.markdown("---")
-st.subheader("Considerações Gerais por Grupo")
-for grupo in grupos_perguntas:
-    chave = grupo["titulo"]
-    texto_atual = st.session_state.consideracoes_gerais_grupo.get(chave, "")
-    st.session_state.consideracoes_gerais_grupo[chave] = st.text_area(
-        f"Considerações gerais para '{chave}':",
-        value=texto_atual,
-        key=f"cons_geral_{chave}",
-        height=100
-    )
+st.subheader(" Considerações Gerais")
+st.session_state.consideracoes_gerais = st.text_area(
+    "Digite aqui observações que se aplicam a todos os casos:",
+    value=st.session_state.consideracoes_gerais,
+    height=130,
+    key="consideracoes_gerais_area"
+)
 
 # ------------------------------------------------------------
-# Histórico (só aparece se já houver relatórios gerados)
+# Histórico da sessão
 # ------------------------------------------------------------
 if st.session_state.relatorios_ia:
     st.markdown("---")
     st.header("Histórico da Sessão")
+
+    def extrair_numero(nome):
+        match = re.search(r'\d+', nome)
+        return int(match.group()) if match else 0
+
     casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
     abas = st.tabs(casos_ordenados)
     for i, nome_caso in enumerate(casos_ordenados):
@@ -287,96 +256,65 @@ if st.session_state.relatorios_ia:
                 st.info(st.session_state.identificacao_exames[nome_caso])
             st.write("**Texto Bruto:**")
             st.caption(st.session_state.casos_salvos[nome_caso])
-            if nome_caso in st.session_state.consideracoes_caso_grupo:
-                for grupo_nome, texto in st.session_state.consideracoes_caso_grupo[nome_caso].items():
-                    if texto.strip():
-                        st.write(f"**Considerações ({grupo_nome}):**")
-                        st.info(texto)
+            if nome_caso in st.session_state.consideracoes_caso and st.session_state.consideracoes_caso[nome_caso].strip():
+                st.write("**Considerações adicionais:**")
+                st.info(st.session_state.consideracoes_caso[nome_caso])
             st.write("**Relatório IA:**")
             st.write(st.session_state.relatorios_ia[nome_caso])
 
 # ------------------------------------------------------------
-# Relatório geral – ÚNICA CHAMADA À IA
+# Relatório geral (quando há pelo menos 2 casos)
 # ------------------------------------------------------------
 if len(st.session_state.casos_salvos) >= 2:
     if st.button("Gerar Relatório Geral"):
-        casos_texto = []
-        for nome in sorted(st.session_state.casos_salvos.keys(), key=extrair_numero):
-            casos_texto.append(f"{nome}: {st.session_state.casos_salvos[nome]}")
-        compilado = "\n\n".join(casos_texto)
-
-        for grupo in grupos_perguntas:
-            cons_gerais = st.session_state.consideracoes_gerais_grupo.get(grupo["titulo"], "")
-            if cons_gerais.strip():
-                compilado += f"\n\nConsiderações gerais do grupo '{grupo['titulo']}': {cons_gerais}"
+        compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
+        texto_geral_para_ia = compilado
+        if st.session_state.consideracoes_gerais.strip():
+            texto_geral_para_ia += f"\n\nConsiderações gerais do avaliador: {st.session_state.consideracoes_gerais}"
 
         prompt_geral = (
-            "Você receberá dados de vários casos de mamografia. "
-            "Para cada caso, escreva um único parágrafo coeso que una todas as frases e considerações fornecidas. "
-            "Depois, faça um resumo geral de todos os casos.\n\n"
-            "Formato:\n"
-            "CASO [Nome do Caso]: [texto coeso]\n"
-            "... (repita)\n"
-            "GERAL: [resumo geral]\n\n"
-            "Dados:\n" + compilado
+            "Com base nos relatórios individuais abaixo, elabore um único parágrafo resumindo os achados gerais. "
+            "Não mencione os números dos casos, apenas faça um resumo conciso.\n\n"
+            f"Relatórios:\n{texto_geral_para_ia}"
         )
+        try:
+            response_geral = model.generate_content(prompt_geral)
+            st.session_state.relatorio_geral_salvo = response_geral.text
+            st.info(st.session_state.relatorio_geral_salvo)
 
-        with st.spinner("IA processando todos os relatórios..."):
-            try:
-                response = model.generate_content(prompt_geral)
-                texto_resp = response.text
-                relatorios = {}
-                geral = ""
-                chave_atual = None
-                for linha in texto_resp.split('\n'):
-                    linha = linha.strip()
-                    if linha.startswith("CASO "):
-                        partes = linha.split(":", 1)
-                        if len(partes) == 2:
-                            chave = partes[0].replace("CASO ", "").strip()
-                            relatorios[chave] = partes[1].strip()
-                            chave_atual = chave
-                    elif linha.startswith("GERAL:"):
-                        geral = linha.replace("GERAL:", "").strip()
-                        chave_atual = None
-                    elif chave_atual:
-                        relatorios[chave_atual] += " " + linha
+            # Tabela HTML de respostas
+            st.markdown("---")
+            st.subheader("📊 Tabela de Respostas (Sim/Não)")
 
-                for chave, txt in relatorios.items():
-                    if chave in st.session_state.casos_salvos:
-                        st.session_state.relatorios_ia[chave] = txt
-                st.session_state.relatorio_geral_salvo = geral
+            casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
+            perguntas_ordenadas = list(perguntas.keys())
 
-                st.success("Relatórios gerados!")
-                st.info(geral)
+            html = "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>"
+            html += "<tr><th rowspan='2'>Pergunta</th>"
+            for caso in casos_ordenados:
+                html += f"<th colspan='2'>{caso}</th>"
+            html += "</tr>"
+            html += "<tr>"
+            for _ in casos_ordenados:
+                html += "<th>Sim</th><th>Não</th>"
+            html += "</tr>"
+            for pergunta in perguntas_ordenadas:
+                html += "<tr>"
+                html += f"<td style='text-align: left;'>{pergunta}</td>"
+                for caso in casos_ordenados:
+                    escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
+                    sim_x = "X" if escolha == "Sim" else ""
+                    nao_x = "X" if escolha == "Não" else ""
+                    html += f"<td>{sim_x}</td><td>{nao_x}</td>"
+                html += "</tr>"
+            html += "</table>"
+            st.markdown(html, unsafe_allow_html=True)
 
-                # Tabelas por grupo
-                st.markdown("---")
-                for grupo in grupos_perguntas:
-                    st.subheader(f"📊 {grupo['titulo']} - Respostas")
-                    casos_ord = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
-                    perguntas_grupo = list(grupo["perguntas"].keys())
-                    html = "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>"
-                    html += "<tr><th rowspan='2'>Pergunta</th>"
-                    for caso in casos_ord:
-                        html += f"<th colspan='2'>{caso}</th>"
-                    html += "</tr><tr>" + "".join(["<th>Sim</th><th>Não</th>" for _ in casos_ord]) + "</tr>"
-                    for pergunta in perguntas_grupo:
-                        html += "<tr>"
-                        html += f"<td style='text-align: left;'>{pergunta}</td>"
-                        for caso in casos_ord:
-                            chave_p = f"{grupo['titulo']}||{pergunta}"
-                            esc = st.session_state.escolhas_casos.get(caso, {}).get(chave_p, "-")
-                            html += f"<td>{'X' if esc=='Sim' else ''}</td><td>{'X' if esc=='Não' else ''}</td>"
-                        html += "</tr>"
-                    html += "</table>"
-                    st.markdown(html, unsafe_allow_html=True)
-
-            except Exception as e:
-                st.error(f"Erro ao gerar relatórios: {e}")
+        except Exception as e:
+            st.error(f"Erro ao gerar relatório geral: {e}")
 
 # ------------------------------------------------------------
-# Exportação Word
+# Exportação do documento Word
 # ------------------------------------------------------------
 if st.session_state.relatorios_ia:
     st.markdown("---")
@@ -387,6 +325,7 @@ if st.session_state.relatorios_ia:
 
     with st.expander("Visualizar Prévia do Documento", expanded=True):
         st.markdown("### PRÉVIA DO DOCUMENTO")
+        st.markdown("**Cabeçalho:**")
         cab = st.session_state.dados_cabecalho
         st.write(f"**Mamógrafo:** {cab['mamografo_fabricante']} – {cab['mamografo_modelo']}")
         st.write(f"**CNES:** {cab['cnes']}  |  **QIID:** {cab['qiid']}")
@@ -394,41 +333,45 @@ if st.session_state.relatorios_ia:
         st.write(f"**Instituição:** {cab['instituicao']}")
         st.write(f"**Cidade/Estado:** {cab['cidade']} – {cab['estado']}")
         st.markdown("---")
-        casos_ord = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
-        for grupo in grupos_perguntas:
-            st.markdown(f"**{grupo['titulo']}**")
-            perguntas_grupo = list(grupo["perguntas"].keys())
-            html = "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>"
-            html += "<tr><th rowspan='2'>Pergunta</th>"
-            for caso in casos_ord:
-                html += f"<th colspan='2'>{caso}</th>"
-            html += "</tr><tr>" + "".join(["<th>Sim</th><th>Não</th>" for _ in casos_ord]) + "</tr>"
-            for pergunta in perguntas_grupo:
-                html += "<tr>"
-                html += f"<td style='text-align: left;'>{pergunta}</td>"
-                for caso in casos_ord:
-                    chave_p = f"{grupo['titulo']}||{pergunta}"
-                    esc = st.session_state.escolhas_casos.get(caso, {}).get(chave_p, "-")
-                    html += f"<td>{'X' if esc=='Sim' else ''}</td><td>{'X' if esc=='Não' else ''}</td>"
-                html += "</tr>"
-            html += "</table>"
-            st.markdown(html, unsafe_allow_html=True)
+
+        st.markdown("**Tabela de Respostas**")
+        casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
+        perguntas_ordenadas = list(perguntas.keys())
+        html = "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>"
+        html += "<tr><th rowspan='2'>Pergunta</th>"
+        for caso in casos_ordenados:
+            html += f"<th colspan='2'>{caso}</th>"
+        html += "</tr>"
+        html += "<tr>"
+        for _ in casos_ordenados:
+            html += "<th>Sim</th><th>Não</th>"
+        html += "</tr>"
+        for pergunta in perguntas_ordenadas:
+            html += "<tr>"
+            html += f"<td style='text-align: left;'>{pergunta}</td>"
+            for caso in casos_ordenados:
+                escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
+                sim_x = "X" if escolha == "Sim" else ""
+                nao_x = "X" if escolha == "Não" else ""
+                html += f"<td>{sim_x}</td><td>{nao_x}</td>"
+            html += "</tr>"
+        html += "</table>"
+        st.markdown(html, unsafe_allow_html=True)
 
         st.markdown("**Identificação dos Exames**")
         id_tabela = "| Caso | Identificação do Exame |\n| --- | --- |\n"
-        for caso in casos_ord:
+        for caso in casos_ordenados:
             id_texto = st.session_state.identificacao_exames.get(caso, "")
             id_tabela += f"| {caso} | {id_texto} |\n"
         st.markdown(id_tabela)
         st.markdown("---")
-        for nome_caso in casos_ord:
+
+        for nome_caso in casos_ordenados:
             st.markdown(f"**{nome_caso}**")
             st.write(st.session_state.relatorios_ia[nome_caso])
-            if nome_caso in st.session_state.consideracoes_caso_grupo:
-                for grupo_nome, texto in st.session_state.consideracoes_caso_grupo[nome_caso].items():
-                    if texto.strip():
-                        st.markdown(f"**Considerações ({grupo_nome}):**")
-                        st.info(texto)
+            if nome_caso in st.session_state.consideracoes_caso and st.session_state.consideracoes_caso[nome_caso].strip():
+                st.markdown("**Considerações adicionais:**")
+                st.info(st.session_state.consideracoes_caso[nome_caso])
             st.markdown("---")
         if st.session_state.relatorio_geral_salvo:
             st.markdown("**Relatório Geral Consolidado**")
@@ -436,29 +379,34 @@ if st.session_state.relatorios_ia:
 
     def criar_docx_limpo():
         doc = Document()
-        casos_ord = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
 
         # Cabeçalho
         doc.add_heading("Instrumento para a análise da qualidade da mamografia", level=0)
         doc.add_paragraph()
+
         cab = st.session_state.dados_cabecalho
         p = doc.add_paragraph()
         p.add_run("Mamógrafo (fabricante e modelo): ").bold = True
         p.add_run(f"{cab['mamografo_fabricante']} – {cab['mamografo_modelo']}")
+
         p = doc.add_paragraph()
         p.add_run("CNES: ").bold = True
         p.add_run(cab['cnes'])
         p.add_run("     QIID: ").bold = True
         p.add_run(cab['qiid'])
+
         p = doc.add_paragraph()
         p.add_run("Tipo de mamógrafo: ").bold = True
-        for op in ["Convencional", "Digital CR", "Digital DR", "DR retrofit"]:
-            marcado = "☒" if cab['tipo_mamografo'] == op else "☐"
-            p.add_run(f"  {marcado} {op}  ")
+        opcoes_tipo = ["Convencional", "Digital CR", "Digital DR", "DR retrofit"]
+        for opcao in opcoes_tipo:
+            marcado = "☒" if cab['tipo_mamografo'] == opcao else "☐"
+            p.add_run(f"  {marcado} {opcao}  ")
+
         doc.add_paragraph()
         p = doc.add_paragraph()
         p.add_run("Instituição: ").bold = True
         p.add_run(cab['instituicao'])
+
         p = doc.add_paragraph()
         p.add_run("Cidade: ").bold = True
         p.add_run(cab['cidade'])
@@ -466,72 +414,74 @@ if st.session_state.relatorios_ia:
         p.add_run(cab['estado'])
         doc.add_paragraph()
 
-        # Tabelas por grupo
-        for grupo in grupos_perguntas:
-            doc.add_heading(grupo["titulo"], level=1)
-            perguntas_grupo = list(grupo["perguntas"].keys())
-            num_casos = len(casos_ord)
-            total_colunas = 1 + num_casos * 2
-            tabela = doc.add_table(rows=2 + len(perguntas_grupo), cols=total_colunas)
-            tabela.style = 'Table Grid'
-            tabela.cell(0, 0).merge(tabela.cell(1, 0))
-            tabela.cell(0, 0).text = "Pergunta"
-            for idx, caso in enumerate(casos_ord):
-                col_inicio = 1 + idx * 2
-                col_fim = col_inicio + 1
-                tabela.cell(0, col_inicio).merge(tabela.cell(0, col_fim))
-                tabela.cell(0, col_inicio).text = caso
-            for idx in range(num_casos):
-                tabela.cell(1, 1 + idx * 2).text = "Sim"
-                tabela.cell(1, 1 + idx * 2 + 1).text = "Não"
-            for i, pergunta in enumerate(perguntas_grupo):
-                linha_atual = i + 2
-                tabela.cell(linha_atual, 0).text = pergunta
-                for j, caso in enumerate(casos_ord):
-                    chave_p = f"{grupo['titulo']}||{pergunta}"
-                    esc = st.session_state.escolhas_casos.get(caso, {}).get(chave_p, "-")
-                    col_sim = 1 + j * 2
-                    col_nao = col_sim + 1
-                    if esc == "Sim":
-                        tabela.cell(linha_atual, col_sim).text = "X"
-                        tabela.cell(linha_atual, col_nao).text = ""
-                    elif esc == "Não":
-                        tabela.cell(linha_atual, col_sim).text = ""
-                        tabela.cell(linha_atual, col_nao).text = "X"
-                    else:
-                        tabela.cell(linha_atual, col_sim).text = ""
-                        tabela.cell(linha_atual, col_nao).text = ""
-            doc.add_paragraph()
+        # Tabela de respostas (Sim/Não)
+        doc.add_heading("Tabela de Respostas (Sim/Não)", level=1)
+        casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
+        perguntas_ordenadas = list(perguntas.keys())
+        num_casos = len(casos_ordenados)
+        total_colunas = 1 + num_casos * 2
+
+        tabela = doc.add_table(rows=2 + len(perguntas_ordenadas), cols=total_colunas)
+        tabela.style = 'Table Grid'
+
+        tabela.cell(0, 0).merge(tabela.cell(1, 0))
+        tabela.cell(0, 0).text = "Pergunta"
+
+        for idx, caso in enumerate(casos_ordenados):
+            col_inicio = 1 + idx * 2
+            col_fim = col_inicio + 1
+            tabela.cell(0, col_inicio).merge(tabela.cell(0, col_fim))
+            tabela.cell(0, col_inicio).text = caso
+
+        for idx in range(num_casos):
+            col_sim = 1 + idx * 2
+            col_nao = col_sim + 1
+            tabela.cell(1, col_sim).text = "Sim"
+            tabela.cell(1, col_nao).text = "Não"
+
+        for i, pergunta in enumerate(perguntas_ordenadas):
+            linha_atual = i + 2
+            tabela.cell(linha_atual, 0).text = pergunta
+            for j, caso in enumerate(casos_ordenados):
+                escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
+                col_sim = 1 + j * 2
+                col_nao = col_sim + 1
+                if escolha == "Sim":
+                    tabela.cell(linha_atual, col_sim).text = "X"
+                    tabela.cell(linha_atual, col_nao).text = ""
+                elif escolha == "Não":
+                    tabela.cell(linha_atual, col_sim).text = ""
+                    tabela.cell(linha_atual, col_nao).text = "X"
+                else:
+                    tabela.cell(linha_atual, col_sim).text = ""
+                    tabela.cell(linha_atual, col_nao).text = ""
 
         doc.add_page_break()
 
-        # Mini tabela de identificação
+        # Mini tabela de identificação dos exames
         doc.add_heading("Identificação dos Exames", level=2)
-        mini_tabela = doc.add_table(rows=2, cols=len(casos_ord))
+        mini_tabela = doc.add_table(rows=2, cols=num_casos)
         mini_tabela.style = 'Table Grid'
-        for j, caso in enumerate(casos_ord):
+        for j, caso in enumerate(casos_ordenados):
             mini_tabela.rows[0].cells[j].text = caso
-        for j, caso in enumerate(casos_ord):
+        for j, caso in enumerate(casos_ordenados):
             id_texto = st.session_state.identificacao_exames.get(caso, "")
             mini_tabela.rows[1].cells[j].text = id_texto
         doc.add_paragraph()
 
-        # Considerações específicas
+        # Considerações específicas por caso
         doc.add_heading("Considerações Específicas", level=0)
-        for nome_caso in casos_ord:
+        for nome_caso in casos_ordenados:
             doc.add_heading(nome_caso, level=1)
             texto_ia = st.session_state.relatorios_ia[nome_caso]
             for linha in texto_ia.strip().split('\n'):
                 if linha.strip():
                     doc.add_paragraph(limpar_formatacao(linha))
-            if nome_caso in st.session_state.consideracoes_caso_grupo:
-                for grupo_nome, texto_cons in st.session_state.consideracoes_caso_grupo[nome_caso].items():
-                    if texto_cons.strip():
-                        doc.add_heading(f"Considerações Adicionais - {grupo_nome}", level=2)
-                        doc.add_paragraph(limpar_formatacao(texto_cons))
+            if nome_caso in st.session_state.consideracoes_caso and st.session_state.consideracoes_caso[nome_caso].strip():
+                doc.add_heading("Considerações Adicionais", level=2)
+                doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_caso[nome_caso]))
             doc.add_paragraph("-" * 30)
 
-        # Relatório geral
         if st.session_state.relatorio_geral_salvo:
             for linha in st.session_state.relatorio_geral_salvo.strip().split('\n'):
                 if linha.strip():
@@ -550,12 +500,12 @@ if st.session_state.relatorios_ia:
     )
 
 # ------------------------------------------------------------
-# Reset
+# Botão de reset
 # ------------------------------------------------------------
 st.markdown("---")
 if st.button("🗑️ Limpar todos os casos"):
-    for chave in ["casos_salvos", "relatorios_ia", "relatorio_geral_salvo", "consideracoes_caso_grupo",
-                  "consideracoes_gerais_grupo", "escolhas_casos", "dados_cabecalho", "identificacao_exames"]:
+    for chave in ["casos_salvos", "relatorios_ia", "relatorio_geral_salvo", "consideracoes_caso",
+                  "consideracoes_gerais", "escolhas_casos", "dados_cabecalho", "identificacao_exames"]:
         if chave in st.session_state:
             del st.session_state[chave]
     st.rerun()
