@@ -81,8 +81,6 @@ if "consideracoes_gerais" not in st.session_state:
     st.session_state.consideracoes_gerais = ""
 if "escolhas_casos" not in st.session_state:
     st.session_state.escolhas_casos = {}
-
-# NOVO – ARMAZENAMENTO DA IDENTIFICAÇÃO DO EXAME POR CASO
 if "identificacao_exames" not in st.session_state:
     st.session_state.identificacao_exames = {}
 
@@ -158,7 +156,7 @@ for titulo, info in perguntas.items():
     obs = st.text_input(f"Considerações adicionais: ", key=f"obs_{titulo}_c{caso_atual}")
     respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
-# NOVO – CAMPO DE IDENTIFICAÇÃO DO EXAME
+# Identificação do Exame
 st.markdown("---")
 id_exame = st.text_input(
     "Identificação do Exame (ex.: MAMA 001/2024):",
@@ -198,7 +196,7 @@ if st.button(f"Analisar e Salvar Caso {caso_atual}"):
         texto_bruto = " ".join(respostas_finais)
         st.session_state.casos_salvos[nome_caso] = texto_bruto
         st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
-        st.session_state.identificacao_exames[nome_caso] = id_exame   # NOVO
+        st.session_state.identificacao_exames[nome_caso] = id_exame
 
         escolhas = {}
         for item in respostas_temporarias:
@@ -244,7 +242,6 @@ if st.session_state.relatorios_ia:
     abas = st.tabs(casos_ordenados)
     for i, nome_caso in enumerate(casos_ordenados):
         with abas[i]:
-            # Mostra a identificação do exame
             if nome_caso in st.session_state.identificacao_exames and st.session_state.identificacao_exames[nome_caso].strip():
                 st.write("**Identificação do Exame:**")
                 st.info(st.session_state.identificacao_exames[nome_caso])
@@ -325,18 +322,10 @@ if st.session_state.relatorios_ia:
         st.write(f"**Cidade/Estado:** {cab['cidade']} – {cab['estado']}")
         st.markdown("---")
 
-        # Mini tabela de identificação na prévia
-        st.markdown("**Identificação dos Exames**")
-        casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
-        id_tabela = "| Caso | Identificação do Exame |\n| --- | --- |\n"
-        for caso in casos_ordenados:
-            id_texto = st.session_state.identificacao_exames.get(caso, "")
-            id_tabela += f"| {caso} | {id_texto} |\n"
-        st.markdown(id_tabela)
-
-        st.markdown("---")
-        # Prévia da tabela HTML de respostas
+        # Prévia da tabela de respostas
         st.markdown("**Tabela de Respostas**")
+        casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
+        perguntas_ordenadas = list(perguntas.keys())
         html = "<table border='1' style='border-collapse: collapse; width: 100%; text-align: center;'>"
         html += "<tr><th rowspan='2'>Pergunta</th>"
         for caso in casos_ordenados:
@@ -346,7 +335,6 @@ if st.session_state.relatorios_ia:
         for _ in casos_ordenados:
             html += "<th>Sim</th><th>Não</th>"
         html += "</tr>"
-        perguntas_ordenadas = list(perguntas.keys())
         for pergunta in perguntas_ordenadas:
             html += "<tr>"
             html += f"<td style='text-align: left;'>{pergunta}</td>"
@@ -358,6 +346,14 @@ if st.session_state.relatorios_ia:
             html += "</tr>"
         html += "</table>"
         st.markdown(html, unsafe_allow_html=True)
+
+        # Mini tabela de identificação na prévia (após a de respostas)
+        st.markdown("**Identificação dos Exames**")
+        id_tabela = "| Caso | Identificação do Exame |\n| --- | --- |\n"
+        for caso in casos_ordenados:
+            id_texto = st.session_state.identificacao_exames.get(caso, "")
+            id_tabela += f"| {caso} | {id_texto} |\n"
+        st.markdown(id_tabela)
 
         st.markdown("---")
         for nome_caso in casos_ordenados:
@@ -374,7 +370,9 @@ if st.session_state.relatorios_ia:
     def criar_docx_limpo():
         doc = Document()
 
-        # Cabeçalho no Word
+        # ========================================================
+        # CABEÇALHO
+        # ========================================================
         doc.add_heading("Instrumento para a análise da qualidade da mamografia", level=0)
         doc.add_paragraph()
 
@@ -412,34 +410,13 @@ if st.session_state.relatorios_ia:
         doc.add_paragraph()
 
         # ========================================================
-        # MINI TABELA DE IDENTIFICAÇÃO DOS EXAMES
-        # ========================================================
-        doc.add_heading("Identificação dos Exames", level=2)
-        casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
-        num_casos = len(casos_ordenados)
-        mini_tabela = doc.add_table(rows=2, cols=num_casos)
-        mini_tabela.style = 'Table Grid'
-
-        # Primeira linha: cabeçalho "Identificação do Exame" mesclado em todas as colunas
-        primeira_linha = mini_tabela.rows[0]
-        if num_casos > 1:
-            primeira_linha.cells[0].merge(primeira_linha.cells[-1])
-        primeira_linha.cells[0].text = "Identificação do Exame"
-
-        # Segunda linha: texto de cada caso
-        segunda_linha = mini_tabela.rows[1]
-        for j, caso in enumerate(casos_ordenados):
-            id_texto = st.session_state.identificacao_exames.get(caso, "")
-            segunda_linha.cells[j].text = id_texto
-
-        doc.add_paragraph()  # pequeno espaço
-
-        # ========================================================
-        # TABELA DE RESPOSTAS (MESCLADA)
+        # TABELA DE RESPOSTAS (agora em primeiro)
         # ========================================================
         doc.add_heading("Tabela de Respostas (Sim/Não)", level=1)
 
+        casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
         perguntas_ordenadas = list(perguntas.keys())
+        num_casos = len(casos_ordenados)
         total_colunas = 1 + num_casos * 2
 
         tabela = doc.add_table(rows=2 + len(perguntas_ordenadas), cols=total_colunas)
@@ -479,7 +456,29 @@ if st.session_state.relatorios_ia:
 
         doc.add_paragraph()
 
-        # Considerações específicas por caso
+        # ========================================================
+        # MINI TABELA DE IDENTIFICAÇÃO DOS EXAMES (após a tabela)
+        # ========================================================
+        doc.add_heading("Identificação dos Exames", level=2)
+        mini_tabela = doc.add_table(rows=2, cols=num_casos)
+        mini_tabela.style = 'Table Grid'
+
+        # Linha de cabeçalho mesclada
+        if num_casos > 1:
+            mini_tabela.rows[0].cells[0].merge(mini_tabela.rows[0].cells[-1])
+        mini_tabela.rows[0].cells[0].text = "Identificação do Exame"
+
+        # Linha com os textos
+        for j, caso in enumerate(casos_ordenados):
+            id_texto = st.session_state.identificacao_exames.get(caso, "")
+            mini_tabela.rows[1].cells[j].text = id_texto
+
+        # Quebra de página para separar das considerações
+        doc.add_page_break()
+
+        # ========================================================
+        # CONSIDERAÇÕES ESPECÍFICAS E RELATÓRIO GERAL
+        # ========================================================
         doc.add_heading("Considerações Específicas", level=0)
         for nome_caso in casos_ordenados:
             doc.add_heading(nome_caso, level=1)
