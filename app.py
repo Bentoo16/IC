@@ -20,7 +20,7 @@ if "dados_cabecalho" not in st.session_state:
         "mamografo_modelo": "",
         "cnes": "",
         "qiid": "",
-        "tipo_mamografo": None,   # "Convencional", "Digital CR", "Digital DR", "DR retrofit"
+        "tipo_mamografo": None,
         "instituicao": "",
         "cidade": "",
         "estado": ""
@@ -54,7 +54,6 @@ with col3:
 with col4:
     estado = st.text_input("Estado:", value=st.session_state.dados_cabecalho["estado"])
 
-# Atualiza o session_state com os dados atuais do formulário
 st.session_state.dados_cabecalho = {
     "mamografo_fabricante": fabricante,
     "mamografo_modelo": modelo,
@@ -258,7 +257,7 @@ if len(st.session_state.casos_salvos) >= 2:
             st.session_state.relatorio_geral_salvo = response_geral.text
             st.info(st.session_state.relatorio_geral_salvo)
 
-            # Tabela HTML mesclada (Streamlit)
+            # Tabela HTML mesclada
             st.markdown("---")
             st.subheader("📊 Tabela de Respostas (Sim/Não)")
 
@@ -345,9 +344,8 @@ if st.session_state.relatorios_ia:
         if st.session_state.relatorio_geral_salvo:
             st.markdown("**Relatório Geral Consolidado**")
             st.write(st.session_state.relatorio_geral_salvo)
-        if st.session_state.consideracoes_gerais.strip():
-            st.markdown("**Considerações Gerais do Avaliador**")
-            st.info(st.session_state.consideracoes_gerais)
+        # As considerações gerais já estão incorporadas ao texto do relatório geral,
+        # portanto não mostramos mais uma seção separada aqui.
 
     def criar_docx_limpo():
         doc = Document()
@@ -387,7 +385,8 @@ if st.session_state.relatorios_ia:
         p.add_run("     Estado: ").bold = True
         p.add_run(cab['estado'])
 
-        doc.add_page_break()
+        # Pequeno espaçamento e a tabela vem logo a seguir
+        doc.add_paragraph()
 
         # Tabela de respostas (mesclada) no Word
         doc.add_heading("Tabela de Respostas (Sim/Não)", level=1)
@@ -452,10 +451,8 @@ if st.session_state.relatorios_ia:
             for linha in st.session_state.relatorio_geral_salvo.strip().split('\n'):
                 if linha.strip():
                     doc.add_paragraph(limpar_formatacao(linha))
-
-        if st.session_state.consideracoes_gerais.strip():
-            doc.add_heading("Considerações Gerais do Avaliador", level=1)
-            doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_gerais))
+            # As considerações gerais já estão contidas nesse texto, portanto não
+            # é necessário adicionar uma seção separada.
 
         output = BytesIO()
         doc.save(output)
