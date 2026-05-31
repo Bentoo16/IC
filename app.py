@@ -11,7 +11,7 @@ model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
 st.title("Gerador de Relatórios")
 
-# Subtítulo fixo
+# Subtítulo fixo (Mantido exatamente como você pediu)
 st.header("Aspectos Físicos da Imagem")
 
 # --- INICIALIZAÇÃO DA MEMÓRIA ---
@@ -28,7 +28,7 @@ if "consideracoes_gerais" not in st.session_state:
 if "tabela_respostas" not in st.session_state:
     st.session_state.tabela_respostas = {}
 
-# 2. Biblioteca de Perguntas
+# 2. Biblioteca de Perguntas (Intacta, sem nenhuma alteração)
 perguntas = {
     "Contraste adequado": {
         "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
@@ -100,7 +100,7 @@ for titulo, info in perguntas.items():
     obs = st.text_input(f"Considerações adicionais: ", key=f"obs_{titulo}_c{caso_atual}")
     respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
-# Campo para considerações adicionais do caso
+# Campo para considerações adicionais do caso (Mantido seu valor padrão e tamanho)
 st.markdown("---")
 consideracoes_caso = st.text_area(
     "📝 Considerações adicionais para este caso (opcional):",
@@ -126,65 +126,15 @@ if st.button(f"Analisar e Salvar Caso {caso_atual}"):
         
         for item in respostas_temporarias:
             info_pergunta = perguntas[item["titulo"]]
+            
+            # Captura Sim/Não puro para alimentar a tabela
             dicionario_respostas_brutas[item["titulo"]] = item["escolha"]
             
+            # Lógica exata de concatenação e busca de frases que você enviou
             frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]] if item["escolha"] == "Não" and item["sub_escolha"] else info_pergunta["opcoes"][item["escolha"]]
             if item["obs"]:
                 frase_base += f" Detalhe adicional: {item['obs']}"
             respostas_finais.append(frase_base)
 
         texto_bruto = " ".join(respostas_finais)
-        st.session_state.casos_salvos[nome_caso] = texto_bruto
-        st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
-        st.session_state.tabela_respostas[nome_caso] = dicionario_respostas_brutas
-
-        texto_para_ia = texto_bruto
-        if consideracoes_caso.strip():
-            texto_para_ia += f"\n\n{consideracoes_caso}"
-
-        with st.spinner("IA formatando relatório..."):
-            try:
-                prompt = (
-                    f"Deixe essas frases em um único texto coeso. "
-                    f"Não mude as frases, apenas deixe o texto coeso para o Caso {caso_atual}: {texto_para_ia}"
-                )
-                response = model.generate_content(prompt)
-                st.session_state.relatorios_ia[nome_caso] = response.text
-                st.success(f"Caso {caso_atual} processado!")
-            except Exception as e:
-                st.error(f"Erro ao gerar relatório: {e}")
-
-# HISTÓRICO NA TELA (Casos individuais salvos)
-if st.session_state.relatorios_ia:
-    st.markdown("---")
-    st.header("Histórico da Sessão")
-    def extrair_numero(nome):
-        match = re.search(r'\d+', nome)
-        return int(match.group()) if match else 0
-
-    casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
-    abas = st.tabs(casos_ordenados)
-    for i, nome_caso in enumerate(casos_ordenados):
-        with abas[i]:
-            st.write("**Texto Bruto:**")
-            st.caption(st.session_state.casos_salvos[nome_caso])
-            if nome_caso in st.session_state.consideracoes_caso and st.session_state.consideracoes_caso[nome_caso].strip():
-                st.write("**Considerações adicionais:**")
-                st.info(st.session_state.consideracoes_caso[nome_caso])
-            st.write("**Relatório IA:**")
-            st.write(st.session_state.relatorios_ia[nome_caso])
-
-# Campo de entrada para as Considerações Gerais
-st.markdown("---")
-st.subheader("📝 Considerações Gerais (serão incluídas em 'Todos os casos')")
-st.session_state.consideracoes_generais = st.text_area(
-    "Digite aqui observações que se aplicam a todos os casos:",
-    value=st.session_state.consideracoes_generais,
-    height=130,
-    key="consideracoes_gerais_area"
-)
-
-# --- BOTÃO E LÓGICA DO RELATÓRIO GERAL ---
-if len(st.session_state.casos_salvos) >= 2:
-    if st.button("Gerar Relatório Geral"):
-        compilado = "".join(
+        st.session_state.casos_salvos
