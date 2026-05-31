@@ -84,7 +84,7 @@ if "escolhas_casos" not in st.session_state:
 if "identificacao_exames" not in st.session_state:
     st.session_state.identificacao_exames = {}
 
-# 2. Biblioteca de Perguntas
+# 2. Biblioteca de Perguntas (inalterada)
 perguntas = {
     "Contraste adequado": {
         "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
@@ -347,7 +347,7 @@ if st.session_state.relatorios_ia:
         html += "</table>"
         st.markdown(html, unsafe_allow_html=True)
 
-        # Mini tabela de identificação na prévia (após a de respostas)
+        # Mini tabela de identificação na prévia (já estava correta)
         st.markdown("**Identificação dos Exames**")
         id_tabela = "| Caso | Identificação do Exame |\n| --- | --- |\n"
         for caso in casos_ordenados:
@@ -410,7 +410,7 @@ if st.session_state.relatorios_ia:
         doc.add_paragraph()
 
         # ========================================================
-        # TABELA DE RESPOSTAS (agora em primeiro)
+        # TABELA DE RESPOSTAS (Sim/Não)
         # ========================================================
         doc.add_heading("Tabela de Respostas (Sim/Não)", level=1)
 
@@ -454,27 +454,30 @@ if st.session_state.relatorios_ia:
                     tabela.cell(linha_atual, col_sim).text = ""
                     tabela.cell(linha_atual, col_nao).text = ""
 
-        doc.add_paragraph()
+        # ========================================================
+        # QUEBRA DE PÁGINA ANTES DA MINI TABELA DE IDENTIFICAÇÃO
+        # ========================================================
+        doc.add_page_break()
 
         # ========================================================
-        # MINI TABELA DE IDENTIFICAÇÃO DOS EXAMES (após a tabela)
+        # MINI TABELA DE IDENTIFICAÇÃO DOS EXAMES (CORRIGIDA)
         # ========================================================
         doc.add_heading("Identificação dos Exames", level=2)
+
+        # Tabela com 2 linhas: cabeçalho com os casos, dados com as identificações
         mini_tabela = doc.add_table(rows=2, cols=num_casos)
         mini_tabela.style = 'Table Grid'
 
-        # Linha de cabeçalho mesclada
-        if num_casos > 1:
-            mini_tabela.rows[0].cells[0].merge(mini_tabela.rows[0].cells[-1])
-        mini_tabela.rows[0].cells[0].text = "Identificação do Exame"
+        # Primeira linha: nome dos casos
+        for j, caso in enumerate(casos_ordenados):
+            mini_tabela.rows[0].cells[j].text = caso
 
-        # Linha com os textos
+        # Segunda linha: identificação preenchida pelo usuário
         for j, caso in enumerate(casos_ordenados):
             id_texto = st.session_state.identificacao_exames.get(caso, "")
             mini_tabela.rows[1].cells[j].text = id_texto
 
-        # Quebra de página para separar das considerações
-        doc.add_page_break()
+        doc.add_paragraph()
 
         # ========================================================
         # CONSIDERAÇÕES ESPECÍFICAS E RELATÓRIO GERAL
