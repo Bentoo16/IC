@@ -10,9 +10,6 @@ model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
 st.title("Gerador de Relatórios")
 
-# NOVO TÍTULO: subtítulo fixo "Aspectos Físicos da Imagem"
-st.header("Aspectos Físicos da Imagem")
-
 # --- INICIALIZAÇÃO DA MEMÓRIA ---
 if "casos_salvos" not in st.session_state:
     st.session_state.casos_salvos = {}
@@ -20,13 +17,6 @@ if "relatorios_ia" not in st.session_state:
     st.session_state.relatorios_ia = {}
 if "relatorio_geral_salvo" not in st.session_state:
     st.session_state.relatorio_geral_salvo = None
-
-# NOVO: armazena as considerações adicionais de cada caso separadamente
-if "consideracoes_caso" not in st.session_state:
-    st.session_state.consideracoes_caso = {}
-# NOVO: considerações gerais (uma única string para todo o relatório)
-if "consideracoes_gerais" not in st.session_state:
-    st.session_state.consideracoes_gerais = ""
 
 # 2. Biblioteca de Perguntas
 perguntas = {
@@ -100,13 +90,12 @@ for titulo, info in perguntas.items():
     obs = st.text_input(f"Considerações adicionais: ", key=f"obs_{titulo}_c{caso_atual}")
     respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
-# NOVO: campo para considerações adicionais do caso como um todo
+# --- CAMPO: CONSIDERAÇÕES ADICIONAIS DE CADA CASO ---
 st.markdown("---")
+st.subheader(f"📝 Considerações Próprias do Caso {caso_atual}")
 consideracoes_caso = st.text_area(
-    "📝 Considerações adicionais para este caso (opcional):",
-    value=st.session_state.consideracoes_caso.get(f"Caso {caso_atual}", ""),
-    key=f"consideracoes_c{caso_atual}",
-    height=120
+    f"Digite notas ou observações exclusivas para o Caso {caso_atual} (opcional):",
+    key=f"cons_exclusiva_c{caso_atual}"
 )
 
 # 4. Lógica ao Salvar
@@ -121,50 +110,39 @@ if st.button(f"Analisar e Salvar Caso {caso_atual}"):
     if caso_ja_existe and not confirmacao:
         st.warning("Marque a confirmação para sobrescrever o caso.")
     else:
-        # Monta as respostas finais a partir das escolhas
         respostas_finais = []
         for item in respostas_temporarias:
             info_pergunta = perguntas[item["titulo"]]
-            frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]] if item["escolha"] == "Não" and item["sub_escolha"] else info_pergunta["opcoes"][item["escolha"]]
-            if item["obs"]:
-                frase_base += f" Detalhe adicional: {item['obs']}"
-            respostas_finais.append(frase_base)
+            
+            if item["escolha"] == "Não" and "sub_opcoes" in info_pergunta and item["sub_escolha"] in info_pergunta["sub_opcoes"]:
+                frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
+            else:
+                frase_base = info_pergunta["opcoes"].get(item["escolha"], "")
+            
+            if item["obs"].strip():
+                frase_base += f" Detalhe adicional: {item['obs'].strip()}"
+                
+            if frase_base:
+                respostas_finais.append(frase_base)
 
         texto_bruto = " ".join(respostas_finais)
-        st.session_state.casos_salvos[nome_caso] = texto_bruto
         
-        # NOVO: salva as considerações adicionais do caso
-        st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
-
-        # NOVO: incorpora as considerações ao texto bruto que será enviado à IA
-        texto_para_ia = texto_bruto
+        # Injeta as considerações específicas do caso se existirem
         if consideracoes_caso.strip():
-            texto_para_ia += f"\n\n{consideracoes_caso}"  # sem rótulo, apenas o conteúdo
+            texto_bruto += f" Observações específicas do avaliador para este caso: {consideracoes_caso.strip()}"
 
-        # Tenta gerar o relatório com a IA, tratando possíveis erros
+        st.session_state.casos_salvos[nome_caso] = texto_bruto
+
         with st.spinner("IA formatando relatório..."):
             try:
-                prompt = (
-                    f"Deixe essas frases em um único texto coeso. "
-                    f"Não mude as frases, apenas deixe o texto coeso para o Caso {caso_atual}: {texto_para_ia}"
-                )
+                prompt = f"Deixe essas frases em um único texto coeso. Não mude as frases, apenas deixe o texto coeso para o Caso {caso_atual}: {texto_bruto}"
                 response = model.generate_content(prompt)
                 st.session_state.relatorios_ia[nome_caso] = response.text
                 st.success(f"Caso {caso_atual} processado!")
             except Exception as e:
                 st.error(f"Erro ao gerar relatório: {e}")
 
-# NOVO: campo para Considerações Gerais (aparece sempre abaixo do histórico)
-st.markdown("---")
-st.subheader("📝 Considerações Gerais (serão incluídas em 'Todos os casos')")
-st.session_state.consideracoes_gerais = st.text_area(
-    "Digite aqui observações que se aplicam a todos os casos:",
-    value=st.session_state.consideracoes_gerais,
-    height=130,
-    key="consideracoes_gerais_area"
-)
-
-# HISTÓRICO NA TELA (Texto bruto aparece somente aqui)
+# HISTÓRICO NA TELA
 if st.session_state.relatorios_ia:
     st.markdown("---")
     st.header("Histórico da Sessão")
@@ -178,28 +156,33 @@ if st.session_state.relatorios_ia:
         with abas[i]:
             st.write("**Texto Bruto:**")
             st.caption(st.session_state.casos_salvos[nome_caso])
-            # NOVO: mostra as considerações adicionais do caso, se houver
-            if nome_caso in st.session_state.consideracoes_caso and st.session_state.consideracoes_caso[nome_caso].strip():
-                st.write("**Considerações adicionais:**")
-                st.info(st.session_state.consideracoes_caso[nome_caso])
             st.write("**Relatório IA:**")
             st.write(st.session_state.relatorios_ia[nome_caso])
 
-# RELATÓRIO GERAL
+# --- SEÇÃO: RELATÓRIO GERAL E CONSIDERAÇÃO GERAL ---
 if len(st.session_state.casos_salvos) >= 2:
+    st.markdown("---")
+    st.header("📊 Fechamento do Relatório Geral")
+    
+    # CAMPO: CONSIDERAÇÃO GERAL (Entra apenas no relatório final consolidado)
+    consideracao_geral_projeto = st.text_area(
+        "Digite notas conclusivas ou pareceres gerais do projeto (opcional, entrará apenas no encerramento):",
+        key="consideracao_geral_projeto"
+    )
+    
     if st.button("Gerar Relatório Geral"):
-        # Conecta todos os casos em um texto estruturado
         compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
-        # NOVO: incorpora as considerações gerais ao texto do relatório geral
-        texto_geral_para_ia = compilado
-        if st.session_state.consideracoes_gerais.strip():
-            texto_geral_para_ia += f"\n\nConsiderações gerais do avaliador: {st.session_state.consideracoes_gerais}"
-
+        
+        # Monta o prompt incluindo a consideração geral se fornecida
         prompt_geral = (
             "Com base nos relatórios individuais abaixo, elabore um único parágrafo resumindo os achados gerais, "
-            "sob o título 'Todos os casos'. Não mencione os números dos casos, apenas faça um resumo conciso.\n\n"
-            f"Relatórios:\n{texto_geral_para_ia}"
+            "sob o título 'Todos os casos'. Não mencione os números dos casos, apenas faça um resumo conciso.\n"
         )
+        if consideracao_geral_projeto.strip():
+            prompt_geral += f"Leve em consideração esta observação geral do avaliador no fechamento: {consideracao_geral_projeto.strip()}\n"
+            
+        prompt_geral += f"\nRelatórios:\n{compilado}"
+        
         try:
             response_geral = model.generate_content(prompt_geral)
             st.session_state.relatorio_geral_salvo = response_geral.text
@@ -215,24 +198,15 @@ if st.session_state.relatorios_ia:
     def limpar_formatacao(texto):
         return texto.replace("**", "").replace("__", "")
 
-    # Prévia visual do documento (apenas na interface)
     with st.expander("Visualizar Prévia do Documento", expanded=True):
         st.markdown("### PRÉVIA DO DOCUMENTO (Como ficará no Word)")
         for nome_caso in casos_ordenados:
             st.markdown(f"**{nome_caso}**")
             st.write(st.session_state.relatorios_ia[nome_caso])
-            # NOVO: mostra as considerações do caso na prévia
-            if nome_caso in st.session_state.consideracoes_caso and st.session_state.consideracoes_caso[nome_caso].strip():
-                st.markdown("**Considerações adicionais:**")
-                st.info(st.session_state.consideracoes_caso[nome_caso])
             st.markdown("---")
         if st.session_state.relatorio_geral_salvo:
             st.markdown("**Relatório Geral Consolidado**")
             st.write(st.session_state.relatorio_geral_salvo)
-        # NOVO: mostra as considerações gerais na prévia
-        if st.session_state.consideracoes_gerais.strip():
-            st.markdown("**Considerações Gerais do Avaliador**")
-            st.info(st.session_state.consideracoes_gerais)
 
     def criar_docx_limpo():
         doc = Document()
@@ -244,10 +218,6 @@ if st.session_state.relatorios_ia:
             for linha in texto_ia.strip().split('\n'):
                 if linha.strip():
                     doc.add_paragraph(limpar_formatacao(linha))
-            # NOVO: adiciona as considerações do caso como subseção
-            if nome_caso in st.session_state.consideracoes_caso and st.session_state.consideracoes_caso[nome_caso].strip():
-                doc.add_heading("Considerações Adicionais", level=2)
-                doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_caso[nome_caso]))
             doc.add_paragraph("-" * 30)
 
         if st.session_state.relatorio_geral_salvo:
@@ -255,11 +225,6 @@ if st.session_state.relatorios_ia:
             for linha in st.session_state.relatorio_geral_salvo.strip().split('\n'):
                 if linha.strip():
                     doc.add_paragraph(limpar_formatacao(linha))
-
-        # NOVO: adiciona as considerações gerais ao final do documento
-        if st.session_state.consideracoes_gerais.strip():
-            doc.add_heading("Considerações Gerais do Avaliador", level=1)
-            doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_gerais))
 
         output = BytesIO()
         doc.save(output)
@@ -273,11 +238,10 @@ if st.session_state.relatorios_ia:
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
-# BOTÃO DE RESET (limpar toda a sessão)
+# BOTÃO DE RESET
 st.markdown("---")
 if st.button("🗑️ Limpar todos os casos"):
-    # Remove as chaves do session_state relacionadas aos relatórios (incluindo as novas)
-    for chave in ["casos_salvos", "relatorios_ia", "relatorio_geral_salvo", "consideracoes_caso", "consideracoes_gerais"]:
+    for chave in ["casos_salvos", "relatorios_ia", "relatorio_geral_salvo"]:
         if chave in st.session_state:
             del st.session_state[chave]
     st.rerun()
