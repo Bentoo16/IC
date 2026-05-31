@@ -4,16 +4,16 @@ from docx import Document
 from io import BytesIO
 import re
 
-# 1. Configuração da IA
+# Configuração da IA
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
 st.title("Gerador de Relatórios")
 st.header("Aspectos Físicos da Imagem")
 
-# ============================================================
-# CABEÇALHO: dados da instituição e mamógrafo
-# ============================================================
+# ------------------------------------------------------------
+# Inicialização do session_state
+# ------------------------------------------------------------
 if "dados_cabecalho" not in st.session_state:
     st.session_state.dados_cabecalho = {
         "mamografo_fabricante": "",
@@ -25,7 +25,24 @@ if "dados_cabecalho" not in st.session_state:
         "cidade": "",
         "estado": ""
     }
+if "casos_salvos" not in st.session_state:
+    st.session_state.casos_salvos = {}
+if "relatorios_ia" not in st.session_state:
+    st.session_state.relatorios_ia = {}
+if "relatorio_geral_salvo" not in st.session_state:
+    st.session_state.relatorio_geral_salvo = None
+if "consideracoes_caso" not in st.session_state:
+    st.session_state.consideracoes_caso = {}
+if "consideracoes_gerais" not in st.session_state:
+    st.session_state.consideracoes_gerais = ""
+if "escolhas_casos" not in st.session_state:
+    st.session_state.escolhas_casos = {}
+if "identificacao_exames" not in st.session_state:
+    st.session_state.identificacao_exames = {}
 
+# ------------------------------------------------------------
+# Cabeçalho – dados da instituição
+# ------------------------------------------------------------
 st.markdown("---")
 st.subheader("Dados do Cabeçalho (para o relatório Word)")
 
@@ -64,27 +81,10 @@ st.session_state.dados_cabecalho = {
     "cidade": cidade,
     "estado": estado
 }
-# ============================================================
-# FIM DO CABEÇALHO
-# ============================================================
 
-# --- INICIALIZAÇÃO DA MEMÓRIA (restante) ---
-if "casos_salvos" not in st.session_state:
-    st.session_state.casos_salvos = {}
-if "relatorios_ia" not in st.session_state:
-    st.session_state.relatorios_ia = {}
-if "relatorio_geral_salvo" not in st.session_state:
-    st.session_state.relatorio_geral_salvo = None
-if "consideracoes_caso" not in st.session_state:
-    st.session_state.consideracoes_caso = {}
-if "consideracoes_gerais" not in st.session_state:
-    st.session_state.consideracoes_gerais = ""
-if "escolhas_casos" not in st.session_state:
-    st.session_state.escolhas_casos = {}
-if "identificacao_exames" not in st.session_state:
-    st.session_state.identificacao_exames = {}
-
-# 2. Biblioteca de Perguntas (inalterada)
+# ------------------------------------------------------------
+# Biblioteca de perguntas
+# ------------------------------------------------------------
 perguntas = {
     "Contraste adequado": {
         "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
@@ -141,22 +141,23 @@ perguntas = {
     }
 }
 
-# SELEÇÃO DE CASO
+# ------------------------------------------------------------
+# Seleção do caso e perguntas
+# ------------------------------------------------------------
 st.markdown("---")
 caso_atual = st.selectbox("Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
 
-# 3. Interface de Perguntas
 respostas_temporarias = []
 for titulo, info in perguntas.items():
     st.subheader(titulo)
-    escolha = st.radio(f"Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}")
+    escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}")
     sub_escolha = None
     if "sub_opcoes" in info and escolha == "Não":
-        sub_escolha = st.radio(f"Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
-    obs = st.text_input(f"Considerações adicionais: ", key=f"obs_{titulo}_c{caso_atual}")
+        sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
+    obs = st.text_input("Considerações adicionais: ", key=f"obs_{titulo}_c{caso_atual}")
     respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
-# Identificação do Exame
+# Identificação do exame
 st.markdown("---")
 id_exame = st.text_input(
     "Identificação do Exame (ex.: MAMA 001/2024):",
@@ -173,7 +174,9 @@ consideracoes_caso = st.text_area(
     height=120
 )
 
-# 4. Lógica ao Salvar
+# ------------------------------------------------------------
+# Lógica de salvamento do caso
+# ------------------------------------------------------------
 nome_caso = f"Caso {caso_atual}"
 caso_ja_existe = nome_caso in st.session_state.casos_salvos
 confirmacao = True
@@ -219,7 +222,9 @@ if st.button(f"Analisar e Salvar Caso {caso_atual}"):
             except Exception as e:
                 st.error(f"Erro ao gerar relatório: {e}")
 
-# Considerações Gerais
+# ------------------------------------------------------------
+# Considerações gerais
+# ------------------------------------------------------------
 st.markdown("---")
 st.subheader("📝 Considerações Gerais (serão incluídas em 'Todos os casos')")
 st.session_state.consideracoes_gerais = st.text_area(
@@ -229,7 +234,9 @@ st.session_state.consideracoes_gerais = st.text_area(
     key="consideracoes_gerais_area"
 )
 
-# HISTÓRICO
+# ------------------------------------------------------------
+# Histórico da sessão
+# ------------------------------------------------------------
 if st.session_state.relatorios_ia:
     st.markdown("---")
     st.header("Histórico da Sessão")
@@ -253,7 +260,9 @@ if st.session_state.relatorios_ia:
             st.write("**Relatório IA:**")
             st.write(st.session_state.relatorios_ia[nome_caso])
 
-# RELATÓRIO GERAL
+# ------------------------------------------------------------
+# Relatório geral (quando há pelo menos 2 casos)
+# ------------------------------------------------------------
 if len(st.session_state.casos_salvos) >= 2:
     if st.button("Gerar Relatório Geral"):
         compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
@@ -262,8 +271,8 @@ if len(st.session_state.casos_salvos) >= 2:
             texto_geral_para_ia += f"\n\nConsiderações gerais do avaliador: {st.session_state.consideracoes_gerais}"
 
         prompt_geral = (
-            "Com base nos relatórios individuais abaixo, elabore um único parágrafo resumindo os achados gerais, "
-            "sob o título 'Todos os casos'. Não mencione os números dos casos, apenas faça um resumo conciso.\n\n"
+            "Com base nos relatórios individuais abaixo, elabore um único parágrafo resumindo os achados gerais. "
+            "Não mencione os números dos casos, apenas faça um resumo conciso.\n\n"
             f"Relatórios:\n{texto_geral_para_ia}"
         )
         try:
@@ -271,7 +280,7 @@ if len(st.session_state.casos_salvos) >= 2:
             st.session_state.relatorio_geral_salvo = response_geral.text
             st.info(st.session_state.relatorio_geral_salvo)
 
-            # Tabela HTML mesclada
+            # Tabela HTML de respostas
             st.markdown("---")
             st.subheader("📊 Tabela de Respostas (Sim/Não)")
 
@@ -302,15 +311,17 @@ if len(st.session_state.casos_salvos) >= 2:
         except Exception as e:
             st.error(f"Erro ao gerar relatório geral: {e}")
 
-# SISTEMA DE EXPORTAÇÃO
+# ------------------------------------------------------------
+# Exportação do documento Word
+# ------------------------------------------------------------
 if st.session_state.relatorios_ia:
     st.markdown("---")
     st.header("💾 Exportar Documento")
 
     def limpar_formatacao(texto):
-        return texto.replace("**", "").replace("__", "")
+        # Remove marcas de markdown que a IA possa gerar
+        return texto.replace("**", "").replace("__", "").replace("#", "")
 
-    # Prévia do documento
     with st.expander("Visualizar Prévia do Documento", expanded=True):
         st.markdown("### PRÉVIA DO DOCUMENTO")
         st.markdown("**Cabeçalho:**")
@@ -322,7 +333,6 @@ if st.session_state.relatorios_ia:
         st.write(f"**Cidade/Estado:** {cab['cidade']} – {cab['estado']}")
         st.markdown("---")
 
-        # Prévia da tabela de respostas
         st.markdown("**Tabela de Respostas**")
         casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
         perguntas_ordenadas = list(perguntas.keys())
@@ -347,15 +357,14 @@ if st.session_state.relatorios_ia:
         html += "</table>"
         st.markdown(html, unsafe_allow_html=True)
 
-        # Mini tabela de identificação na prévia (já estava correta)
         st.markdown("**Identificação dos Exames**")
         id_tabela = "| Caso | Identificação do Exame |\n| --- | --- |\n"
         for caso in casos_ordenados:
             id_texto = st.session_state.identificacao_exames.get(caso, "")
             id_tabela += f"| {caso} | {id_texto} |\n"
         st.markdown(id_tabela)
-
         st.markdown("---")
+
         for nome_caso in casos_ordenados:
             st.markdown(f"**{nome_caso}**")
             st.write(st.session_state.relatorios_ia[nome_caso])
@@ -370,14 +379,11 @@ if st.session_state.relatorios_ia:
     def criar_docx_limpo():
         doc = Document()
 
-        # ========================================================
-        # CABEÇALHO
-        # ========================================================
+        # Cabeçalho
         doc.add_heading("Instrumento para a análise da qualidade da mamografia", level=0)
         doc.add_paragraph()
 
         cab = st.session_state.dados_cabecalho
-
         p = doc.add_paragraph()
         p.add_run("Mamógrafo (fabricante e modelo): ").bold = True
         p.add_run(f"{cab['mamografo_fabricante']} – {cab['mamografo_modelo']}")
@@ -396,7 +402,6 @@ if st.session_state.relatorios_ia:
             p.add_run(f"  {marcado} {opcao}  ")
 
         doc.add_paragraph()
-
         p = doc.add_paragraph()
         p.add_run("Instituição: ").bold = True
         p.add_run(cab['instituicao'])
@@ -406,14 +411,10 @@ if st.session_state.relatorios_ia:
         p.add_run(cab['cidade'])
         p.add_run("     Estado: ").bold = True
         p.add_run(cab['estado'])
-
         doc.add_paragraph()
 
-        # ========================================================
-        # TABELA DE RESPOSTAS (Sim/Não)
-        # ========================================================
+        # Tabela de respostas (Sim/Não)
         doc.add_heading("Tabela de Respostas (Sim/Não)", level=1)
-
         casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
         perguntas_ordenadas = list(perguntas.keys())
         num_casos = len(casos_ordenados)
@@ -454,34 +455,21 @@ if st.session_state.relatorios_ia:
                     tabela.cell(linha_atual, col_sim).text = ""
                     tabela.cell(linha_atual, col_nao).text = ""
 
-        # ========================================================
-        # QUEBRA DE PÁGINA ANTES DA MINI TABELA DE IDENTIFICAÇÃO
-        # ========================================================
+        # Quebra de página antes da identificação
         doc.add_page_break()
 
-        # ========================================================
-        # MINI TABELA DE IDENTIFICAÇÃO DOS EXAMES (CORRIGIDA)
-        # ========================================================
+        # Mini tabela de identificação dos exames
         doc.add_heading("Identificação dos Exames", level=2)
-
-        # Tabela com 2 linhas: cabeçalho com os casos, dados com as identificações
         mini_tabela = doc.add_table(rows=2, cols=num_casos)
         mini_tabela.style = 'Table Grid'
-
-        # Primeira linha: nome dos casos
         for j, caso in enumerate(casos_ordenados):
             mini_tabela.rows[0].cells[j].text = caso
-
-        # Segunda linha: identificação preenchida pelo usuário
         for j, caso in enumerate(casos_ordenados):
             id_texto = st.session_state.identificacao_exames.get(caso, "")
             mini_tabela.rows[1].cells[j].text = id_texto
-
         doc.add_paragraph()
 
-        # ========================================================
-        # CONSIDERAÇÕES ESPECÍFICAS E RELATÓRIO GERAL
-        # ========================================================
+        # Considerações específicas por caso
         doc.add_heading("Considerações Específicas", level=0)
         for nome_caso in casos_ordenados:
             doc.add_heading(nome_caso, level=1)
@@ -494,8 +482,8 @@ if st.session_state.relatorios_ia:
                 doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_caso[nome_caso]))
             doc.add_paragraph("-" * 30)
 
+        # Relatório geral (sem título extra)
         if st.session_state.relatorio_geral_salvo:
-            doc.add_heading("Todos os Casos", level=1)
             for linha in st.session_state.relatorio_geral_salvo.strip().split('\n'):
                 if linha.strip():
                     doc.add_paragraph(limpar_formatacao(linha))
@@ -512,7 +500,9 @@ if st.session_state.relatorios_ia:
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
-# BOTÃO DE RESET
+# ------------------------------------------------------------
+# Botão de reset
+# ------------------------------------------------------------
 st.markdown("---")
 if st.button("🗑️ Limpar todos os casos"):
     for chave in ["casos_salvos", "relatorios_ia", "relatorio_geral_salvo", "consideracoes_caso",
