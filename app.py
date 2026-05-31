@@ -9,7 +9,6 @@ genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
 st.title("Gerador de Relatórios")
-st.header("Aspectos Físicos da Imagem")
 
 # ------------------------------------------------------------
 # Inicialização do session_state
@@ -146,6 +145,9 @@ perguntas = {
 # ------------------------------------------------------------
 st.markdown("---")
 caso_atual = st.selectbox("Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
+
+# Título do grupo de perguntas (movido para cá)
+st.header("Aspectos Físicos da Imagem")
 
 respostas_temporarias = []
 for titulo, info in perguntas.items():
@@ -319,7 +321,6 @@ if st.session_state.relatorios_ia:
     st.header("💾 Exportar Documento")
 
     def limpar_formatacao(texto):
-        # Remove marcas de markdown que a IA possa gerar
         return texto.replace("**", "").replace("__", "").replace("#", "")
 
     with st.expander("Visualizar Prévia do Documento", expanded=True):
@@ -455,7 +456,6 @@ if st.session_state.relatorios_ia:
                     tabela.cell(linha_atual, col_sim).text = ""
                     tabela.cell(linha_atual, col_nao).text = ""
 
-        # Quebra de página antes da identificação
         doc.add_page_break()
 
         # Mini tabela de identificação dos exames
@@ -482,7 +482,6 @@ if st.session_state.relatorios_ia:
                 doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_caso[nome_caso]))
             doc.add_paragraph("-" * 30)
 
-        # Relatório geral (sem título extra)
         if st.session_state.relatorio_geral_salvo:
             for linha in st.session_state.relatorio_geral_salvo.strip().split('\n'):
                 if linha.strip():
