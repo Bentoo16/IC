@@ -226,7 +226,7 @@ if st.button(f"Analisar e Salvar Caso {caso_atual}"):
 # Considerações gerais
 # ------------------------------------------------------------
 st.markdown("---")
-st.subheader("📝 Considerações Gerais (serão incluídas em 'Todos os casos')")
+st.subheader(" Considerações Gerais")
 st.session_state.consideracoes_gerais = st.text_area(
     "Digite aqui observações que se aplicam a todos os casos:",
     value=st.session_state.consideracoes_gerais,
