@@ -27,7 +27,7 @@ if "consideracoes_gerais" not in st.session_state:
 if "escolhas_casos" not in st.session_state:
     st.session_state.escolhas_casos = {}
 
-# 2. Biblioteca de Perguntas (inalterada)
+# 2. Biblioteca de Perguntas
 perguntas = {
     "Contraste adequado": {
         "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
@@ -132,13 +132,10 @@ if st.button(f"Analisar e Salvar Caso {caso_atual}"):
         st.session_state.casos_salvos[nome_caso] = texto_bruto
         st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
 
-        # NOVO – TABELA: guarda as escolhas Sim/Não (e sub_escolha se houver)
+        # Guarda as escolhas (Sim/Não) para a tabela
         escolhas = {}
         for item in respostas_temporarias:
-            escolhas[item["titulo"]] = {
-                "escolha": item["escolha"],
-                "sub_escolha": item["sub_escolha"] if item["escolha"] == "Não" else None
-            }
+            escolhas[item["titulo"]] = item["escolha"]   # "Sim" ou "Não"
         st.session_state.escolhas_casos[nome_caso] = escolhas
 
         texto_para_ia = texto_bruto
@@ -206,22 +203,31 @@ if len(st.session_state.casos_salvos) >= 2:
             st.session_state.relatorio_geral_salvo = response_geral.text
             st.info(st.session_state.relatorio_geral_salvo)
 
-            # NOVO – TABELA: exibe a tabela logo após o relatório geral
+            # NOVO – TABELA COM X (Streamlit)
             st.markdown("---")
             st.subheader("📊 Tabela de Respostas (Sim/Não)")
 
-            # Prepara os dados: linhas = perguntas, colunas = casos
             perguntas_ordenadas = list(perguntas.keys())
-            tabela_dados = []
-            for pergunta in perguntas_ordenadas:
-                linha = {"Pergunta": pergunta}
-                for caso in casos_ordenados:
-                    escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, {}).get("escolha", "-")
-                    linha[caso] = escolha
-                tabela_dados.append(linha)
+            casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
 
-            # Exibe a tabela no Streamlit
-            st.table(tabela_dados)
+            # Monta cabeçalho: Pergunta | Caso 1 Sim | Caso 1 Não | Caso 2 Sim | Caso 2 Não ...
+            cabecalho_md = "| Pergunta |"
+            for caso in casos_ordenados:
+                cabecalho_md += f" {caso} Sim | {caso} Não |"
+            cabecalho_md += "\n|" + "---|" + "---|" * (len(casos_ordenados) * 2)  # linha separadora
+
+            linhas_md = cabecalho_md
+            for pergunta in perguntas_ordenadas:
+                linha = f"| {pergunta} |"
+                for caso in casos_ordenados:
+                    escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
+                    # Coloca X na coluna correspondente
+                    sim_x = "X" if escolha == "Sim" else ""
+                    nao_x = "X" if escolha == "Não" else ""
+                    linha += f" {sim_x} | {nao_x} |"
+                linhas_md += "\n" + linha
+
+            st.markdown(linhas_md, unsafe_allow_html=True)
 
         except Exception as e:
             st.error(f"Erro ao gerar relatório geral: {e}")
@@ -236,17 +242,25 @@ if st.session_state.relatorios_ia:
 
     with st.expander("Visualizar Prévia do Documento", expanded=True):
         st.markdown("### PRÉVIA DO DOCUMENTO (Como ficará no Word)")
-        # NOVO – TABELA: prévia da tabela
+
+        # Prévia da tabela (mesmo formato)
         st.markdown("**Tabela de Respostas**")
+        casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
         perguntas_ordenadas = list(perguntas.keys())
-        tabela_previa = []
+        cabecalho_md = "| Pergunta |"
+        for caso in casos_ordenados:
+            cabecalho_md += f" {caso} Sim | {caso} Não |"
+        cabecalho_md += "\n|" + "---|" + "---|" * (len(casos_ordenados) * 2)
+        linhas_md = cabecalho_md
         for pergunta in perguntas_ordenadas:
-            linha = {"Pergunta": pergunta}
+            linha = f"| {pergunta} |"
             for caso in casos_ordenados:
-                escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, {}).get("escolha", "-")
-                linha[caso] = escolha
-            tabela_previa.append(linha)
-        st.table(tabela_previa)
+                escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
+                sim_x = "X" if escolha == "Sim" else ""
+                nao_x = "X" if escolha == "Não" else ""
+                linha += f" {sim_x} | {nao_x} |"
+            linhas_md += "\n" + linha
+        st.markdown(linhas_md, unsafe_allow_html=True)
 
         st.markdown("---")
         for nome_caso in casos_ordenados:
@@ -266,33 +280,59 @@ if st.session_state.relatorios_ia:
     def criar_docx_limpo():
         doc = Document()
 
-        # NOVO – TABELA: insere a tabela como primeiro elemento do Word
+        # NOVO – TABELA COM X NO WORD (primeira coisa)
         doc.add_heading("Tabela de Respostas (Sim/Não)", level=1)
 
-        perguntas_ordenadas = list(perguntas.keys())
         casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
+        perguntas_ordenadas = list(perguntas.keys())
 
-        # Cria a tabela: 1 linha de cabeçalho + N perguntas, 1 coluna de pergunta + N casos
-        tabela = doc.add_table(rows=len(perguntas_ordenadas) + 1, cols=len(casos_ordenados) + 1)
+        # Estrutura: 1 linha de cabeçalho mesclado (Pergunta + cada caso em 2 colunas) +
+        # 1 linha de subcabeçalho (Pergunta + Sim, Não, Sim, Não...) +
+        # linhas de dados
+        num_casos = len(casos_ordenados)
+        total_colunas = 1 + num_casos * 2
+        tabela = doc.add_table(rows=2 + len(perguntas_ordenadas), cols=total_colunas)
         tabela.style = 'Table Grid'
 
-        # Cabeçalho
-        cabecalho = tabela.rows[0].cells
-        cabecalho[0].text = "Pergunta"
-        for j, caso in enumerate(casos_ordenados, start=1):
-            cabecalho[j].text = caso
+        # Mescla a célula "Pergunta" nas duas primeiras linhas (vertical)
+        tabela.cell(0, 0).merge(tabela.cell(1, 0))
+        tabela.cell(0, 0).text = "Pergunta"
 
-        # Preenche as linhas
-        for i, pergunta in enumerate(perguntas_ordenadas, start=1):
-            linha = tabela.rows[i].cells
-            linha[0].text = pergunta
-            for j, caso in enumerate(casos_ordenados, start=1):
-                escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, {}).get("escolha", "-")
-                linha[j].text = escolha
+        # Cabeçalho dos casos (linha 0, mescla horizontal para cada caso)
+        for idx, caso in enumerate(casos_ordenados):
+            col_inicio = 1 + idx * 2
+            col_fim = col_inicio + 1
+            tabela.cell(0, col_inicio).merge(tabela.cell(0, col_fim))
+            tabela.cell(0, col_inicio).text = caso
+
+        # Subcabeçalho Sim/Não (linha 1)
+        for idx in range(num_casos):
+            col_sim = 1 + idx * 2
+            col_nao = col_sim + 1
+            tabela.cell(1, col_sim).text = "Sim"
+            tabela.cell(1, col_nao).text = "Não"
+
+        # Dados (a partir da linha 2)
+        for i, pergunta in enumerate(perguntas_ordenadas):
+            linha_atual = i + 2
+            tabela.cell(linha_atual, 0).text = pergunta
+            for j, caso in enumerate(casos_ordenados):
+                escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
+                col_sim = 1 + j * 2
+                col_nao = col_sim + 1
+                if escolha == "Sim":
+                    tabela.cell(linha_atual, col_sim).text = "X"
+                    tabela.cell(linha_atual, col_nao).text = ""
+                elif escolha == "Não":
+                    tabela.cell(linha_atual, col_sim).text = ""
+                    tabela.cell(linha_atual, col_nao).text = "X"
+                else:
+                    tabela.cell(linha_atual, col_sim).text = ""
+                    tabela.cell(linha_atual, col_nao).text = ""
 
         doc.add_paragraph()  # linha em branco
 
-        # Agora o conteúdo original
+        # Restante do conteúdo (inalterado)
         doc.add_heading("Considerações Específicas", level=0)
 
         for nome_caso in casos_ordenados:
@@ -328,7 +368,7 @@ if st.session_state.relatorios_ia:
         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
 
-# BOTÃO DE RESET (atualizado para limpar também as escolhas)
+# BOTÃO DE RESET (inclui a chave da tabela)
 st.markdown("---")
 if st.button("🗑️ Limpar todos os casos"):
     for chave in ["casos_salvos", "relatorios_ia", "relatorio_geral_salvo", "consideracoes_caso",
