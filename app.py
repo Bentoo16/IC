@@ -160,7 +160,7 @@ for titulo, info in perguntas.items():
 # Identificação do exame
 st.markdown("---")
 id_exame = st.text_input(
-    "Identificação do Exame (ex.: MAMA 001/2024):",
+    "Identificação do Exame:",
     value=st.session_state.identificacao_exames.get(f"Caso {caso_atual}", ""),
     key=f"id_exame_c{caso_atual}"
 )
