@@ -154,7 +154,7 @@ if st.button(f"Analisar e Salvar Caso {caso_atual}"):
             except Exception as e:
                 st.error(f"Erro ao gerar relatório: {e}")
 
-# HISTÓRICO NA TELA
+# HISTÓRICO NA TELA (Casos individuais salvos)
 if st.session_state.relatorios_ia:
     st.markdown("---")
     st.header("Histórico da Sessão")
@@ -174,7 +174,7 @@ if st.session_state.relatorios_ia:
             st.write("**Relatório IA:**")
             st.write(st.session_state.relatorios_ia[nome_caso])
 
-# Campo para Considerações Gerais
+# Campo de entrada para as Considerações Gerais
 st.markdown("---")
 st.subheader("📝 Considerações Gerais (serão incluídas em 'Todos os casos')")
 st.session_state.consideracoes_generais = st.text_area(
@@ -184,126 +184,7 @@ st.session_state.consideracoes_generais = st.text_area(
     key="consideracoes_gerais_area"
 )
 
-# --- RELATÓRIO GERAL E QUADRO DE RESPOSTAS ---
+# --- BOTÃO E LÓGICA DO RELATÓRIO GERAL ---
 if len(st.session_state.casos_salvos) >= 2:
     if st.button("Gerar Relatório Geral"):
-        compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
-        texto_geral_para_ia = compilado
-        if st.session_state.consideracoes_generais.strip():
-            texto_geral_para_ia += f"\n\nConsiderações gerais do avaliador: {st.session_state.consideracoes_generais}"
-
-        prompt_geral = (
-            "Com base nos relatórios individuais abaixo, elabore um único parágrafo resumindo os achados gerais, "
-            "sob o título 'Todos os casos'. Não mencione os números dos casos, apenas faça um resumo conciso.\n\n"
-            f"Relatórios:\n{texto_geral_para_ia}"
-        )
-        try:
-            response_geral = model.generate_content(prompt_geral)
-            st.session_state.relatorio_geral_salvo = response_geral.text
-            st.success("Relatório Geral gerado com sucesso!")
-        except Exception as e:
-            st.error(f"Erro ao gerar relatório geral: {e}")
-
-# Exibe os resultados finais unificados (Tabela + Resumos) apenas se o relatório geral já tiver sido clicado/criado
-if st.session_state.relatorio_geral_salvo:
-    st.markdown("---")
-    st.header("📊 Fechamento do Relatório Geral")
-    
-    # 1. Exibe a tabela na tela
-    st.subheader("Quadro Comparativo de Respostas Principais")
-    df_visualizacao = pd.DataFrame(st.session_state.tabela_respostas)
-    colunas_ordenadas = sorted(df_visualizacao.columns, key=lambda x: int(re.search(r'\d+', x).group()) if re.search(r'\d+', x) else 0)
-    df_visualizacao = df_visualizacao[colunas_ordenadas]
-    st.dataframe(df_visualizacao, use_container_width=True)
-    
-    # 2. Exibe o resumo gerado pela IA na tela
-    st.subheader("Resumo Consolidado IA")
-    st.info(st.session_state.relatorio_geral_salvo)
-
-# SISTEMA DE EXPORTAÇÃO
-if st.session_state.relatorios_ia:
-    st.markdown("---")
-    st.header("💾 Exportar Documento")
-
-    def limpar_formatacao(texto):
-        return texto.replace("**", "").replace("__", "")
-
-    with st.expander("Visualizar Prévia Estrutural do Documento"):
-        for nome_caso in casos_ordenados:
-            st.markdown(f"**{nome_caso}**")
-            st.write(st.session_state.relatorios_ia[nome_caso])
-            st.markdown("---")
-
-    def criar_docx_limpo():
-        doc = Document()
-        doc.add_heading("Considerações Específicas", 0)
-
-        # --- AQUI É INJETADA A TABELA COMO A PRIMEIRA COISA DO ARQUIVO WORD ---
-        if st.session_state.tabela_respostas:
-            doc.add_heading("Quadro Comparativo de Análise", level=1)
-            
-            # Prepara os dados ordenados para montar as células
-            df_doc = pd.DataFrame(st.session_state.tabela_respostas)
-            colunas_doc = sorted(df_doc.columns, key=lambda x: int(re.search(r'\d+', x).group()) if re.search(r'\d+', x) else 0)
-            df_doc = df_doc[colunas_doc]
-            
-            # Cria a tabela no Word: número de linhas = itens + 1 (cabeçalho). Colunas = casos + 1 (aspectos)
-            tabela_word = doc.add_table(rows=len(df_doc) + 1, cols=len(colunas_doc) + 1)
-            tabela_word.style = 'Light Shading Accent 1'  # Estilo limpo padrão do Word
-            
-            # Preenche o cabeçalho
-            hdr_cells = tabela_word.rows[0].cells
-            hdr_cells[0].text = "Aspectos Físicos Avaliados"
-            for idx, nome_col in enumerate(colunas_doc):
-                hdr_cells[idx + 1].text = nome_col
-                
-            # Preenche os dados de cada linha
-            for r_idx, aspecto in enumerate(df_doc.index):
-                row_cells = tabela_word.rows[r_idx + 1].cells
-                row_cells[0].text = aspecto
-                for c_idx, nome_col in enumerate(colunas_doc):
-                    row_cells[c_idx + 1].text = str(df_doc.at[aspecto, nome_col])
-            
-            doc.add_paragraph("\n" * 2) # Espaçamento depois da tabela
-
-        # Segue a gravação dos textos individuais da IA
-        for nome_caso in casos_ordenados:
-            doc.add_heading(nome_caso, level=1)
-            texto_ia = st.session_state.relatorios_ia[nome_caso]
-            for linha in texto_ia.strip().split('\n'):
-                if linha.strip():
-                    doc.add_paragraph(limpar_formatacao(linha))
-            if nome_caso in st.session_state.consideracoes_caso and st.session_state.consideracoes_caso[nome_caso].strip():
-                doc.add_heading("Considerações Adicionais", level=2)
-                doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_caso[nome_caso]))
-            doc.add_paragraph("-" * 30)
-
-        if st.session_state.relatorio_geral_salvo:
-            doc.add_heading("Todos os Casos", level=1)
-            for linha in st.session_state.relatorio_geral_salvo.strip().split('\n'):
-                if linha.strip():
-                    doc.add_paragraph(limpar_formatacao(linha))
-
-        if st.session_state.consideracoes_generais.strip():
-            doc.add_heading("Considerações Gerais do Avaliador", level=1)
-            doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_generais))
-
-        output = BytesIO()
-        doc.save(output)
-        output.seek(0)
-        return output
-
-    st.download_button(
-        label="Baixar Documento Final (.docx)",
-        data=criar_docx_limpo(),
-        file_name="relatorio_final.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
-
-# BOTÃO DE RESET
-st.markdown("---")
-if st.button("🗑️ Limpar todos os casos"):
-    for chave in ["casos_salvos", "relatorios_ia", "relatorio_geral_salvo", "consideracoes_caso", "consideracoes_gerais", "tabela_respostas"]:
-        if chave in st.session_state:
-            del st.session_state[chave]
-    st.rerun()
+        compilado = "".join(
