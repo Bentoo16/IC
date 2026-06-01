@@ -374,7 +374,7 @@ if len(st.session_state.casos_salvos) >= 2:
             st.error(f"Erro ao gerar relatorio geral: {e}")
 
     if st.session_state.relatorio_geral_salvo:
-        st.markdown("### Relatorio Geral Consolidado")
+        st.markdown("### Relatorio geral para todos os casos")
         st.info(st.session_state.relatorio_geral_salvo)
         st.markdown("---")
         st.subheader("Tabela de Respostas (Sim / Nao)")
