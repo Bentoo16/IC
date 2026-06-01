@@ -97,10 +97,7 @@ st.markdown("""
     .stButton>button {
         font-weight: 600;
     }
-    div[data-testid="stForm"] {
-        border: none;
-        padding: 0;
-    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -309,79 +306,79 @@ nome_caso = f"Caso {caso_atual}"
 
 st.header("🔬 Aspectos Físicos da Imagem")
 
-with st.form(key=f"form_caso_{caso_atual}", clear_on_submit=False):
-    respostas_temporarias = []
-    for titulo, info in perguntas.items():
-        st.markdown(f"<div class='card-pergunta'>", unsafe_allow_html=True)
-        st.markdown(f"<h4>{titulo}</h4>", unsafe_allow_html=True)
-        escolha = st.radio("", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
-        sub_escolha = None
-        if "sub_opcoes" in info and escolha == "Não":
-            sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
-        obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional…")
-        respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
-        st.markdown("</div>", unsafe_allow_html=True)
+respostas_temporarias = []
+for titulo, info in perguntas.items():
+    st.markdown(f"<div class='card-pergunta'>", unsafe_allow_html=True)
+    st.markdown(f"<h4>{titulo}</h4>", unsafe_allow_html=True)
+    escolha = st.radio("", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
+    sub_escolha = None
+    if "sub_opcoes" in info and escolha == "Não":
+        sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
+    obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional…")
+    respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("---")
-    id_exame = st.text_input(
-        "🆔 Identificação do Exame:",
-        value=st.session_state.identificacao_exames.get(nome_caso, ""),
-        key=f"id_exame_c{caso_atual}",
-    )
-    consideracoes_caso = st.text_area(
-        "📝 Considerações adicionais para este caso (opcional):",
-        value=st.session_state.consideracoes_caso.get(nome_caso, ""),
-        key=f"consideracoes_c{caso_atual}",
-        height=100,
-    )
+st.markdown("---")
+id_exame = st.text_input(
+    "🆔 Identificação do Exame:",
+    value=st.session_state.identificacao_exames.get(nome_caso, ""),
+    key=f"id_exame_c{caso_atual}",
+)
+consideracoes_caso = st.text_area(
+    "📝 Considerações adicionais para este caso (opcional):",
+    value=st.session_state.consideracoes_caso.get(nome_caso, ""),
+    key=f"consideracoes_c{caso_atual}",
+    height=100,
+)
 
-    caso_ja_existe = nome_caso in st.session_state.casos_salvos
-    texto_botao = f"✅ Analisar e Salvar {nome_caso}"
-    if caso_ja_existe:
-        st.warning(f"⚠️ O {nome_caso} já foi salvo. Submeta novamente para sobrescrever.")
-    submitted = st.form_submit_button(texto_botao, type="primary", use_container_width=True)
+nome_caso = f"Caso {caso_atual}"
+caso_ja_existe = nome_caso in st.session_state.casos_salvos
+confirmacao = True
+if caso_ja_existe:
+    st.warning(f"⚠️ O {nome_caso} já foi salvo anteriormente.")
+    confirmacao = st.checkbox("Deseja sobrescrever o relatório existente?", key=f"conf_{caso_atual}")
 
-# ---------------------------------------------------------------------------
-# Lógica de salvamento (executa apenas quando o formulário é submetido)
-# ---------------------------------------------------------------------------
-if submitted:
-    respostas_finais = []
-    for item in respostas_temporarias:
-        info_pergunta = perguntas[item["titulo"]]
-        if item["escolha"] == "Não" and item["sub_escolha"]:
-            frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
-        else:
-            frase_base = info_pergunta["opcoes"][item["escolha"]]
-        if item["obs"]:
-            frase_base += f" Detalhe adicional: {item['obs']}"
-        respostas_finais.append(frase_base)
+if st.button(f"✅ Analisar e Salvar {nome_caso}", type="primary", use_container_width=True):
+    if caso_ja_existe and not confirmacao:
+        st.warning("Marque a confirmação para sobrescrever o caso.")
+    else:
+        respostas_finais = []
+        for item in respostas_temporarias:
+            info_pergunta = perguntas[item["titulo"]]
+            if item["escolha"] == "Não" and item["sub_escolha"]:
+                frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
+            else:
+                frase_base = info_pergunta["opcoes"][item["escolha"]]
+            if item["obs"]:
+                frase_base += f" Detalhe adicional: {item['obs']}"
+            respostas_finais.append(frase_base)
 
-    texto_bruto = " ".join(respostas_finais)
-    texto_para_ia = texto_bruto
-    if consideracoes_caso.strip():
-        texto_para_ia += f"\n\n{consideracoes_caso}"
+        texto_bruto = " ".join(respostas_finais)
+        texto_para_ia = texto_bruto
+        if consideracoes_caso.strip():
+            texto_para_ia += f"\n\n{consideracoes_caso}"
 
-    escolhas = {item["titulo"]: item["escolha"] for item in respostas_temporarias}
+        escolhas = {item["titulo"]: item["escolha"] for item in respostas_temporarias}
 
-    with st.spinner("🤖 IA está formatando o relatório…"):
-        try:
-            prompt = (
-                f"Deixe essas frases em um único texto coeso. "
-                f"Não mude as frases, apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
-            )
-            response = model.generate_content(prompt)
+        with st.spinner("🤖 IA está formatando o relatório…"):
+            try:
+                prompt = (
+                    f"Deixe essas frases em um único texto coeso. "
+                    f"Não mude as frases, apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
+                )
+                response = model.generate_content(prompt)
 
-            # Só persiste após sucesso da API
-            st.session_state.casos_salvos[nome_caso] = texto_bruto
-            st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
-            st.session_state.identificacao_exames[nome_caso] = id_exame
-            st.session_state.escolhas_casos[nome_caso] = escolhas
-            st.session_state.relatorios_ia[nome_caso] = response.text
+                # Só persiste após sucesso da API
+                st.session_state.casos_salvos[nome_caso] = texto_bruto
+                st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
+                st.session_state.identificacao_exames[nome_caso] = id_exame
+                st.session_state.escolhas_casos[nome_caso] = escolhas
+                st.session_state.relatorios_ia[nome_caso] = response.text
 
-            st.success(f"✅ {nome_caso} processado com sucesso!")
-            st.rerun()
-        except Exception as e:
-            st.error(f"❌ Erro ao gerar relatório: {e}")
+                st.success(f"✅ {nome_caso} processado com sucesso!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"❌ Erro ao gerar relatório: {e}")
 
 # ---------------------------------------------------------------------------
 # Considerações gerais
