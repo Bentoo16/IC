@@ -5,7 +5,7 @@ from io import BytesIO
 import re
 
 # ---------------------------------------------------------------------------
-# CSS customizado (limpo e formal)
+# CSS customizado
 # ---------------------------------------------------------------------------
 st.markdown("""
 <style>
@@ -49,7 +49,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Funcoes auxiliares
+# Funções auxiliares
 # ---------------------------------------------------------------------------
 def extrair_numero(nome):
     match = re.search(r'\d+', nome)
@@ -63,7 +63,7 @@ def gerar_tabela_html(casos_ordenados, perguntas_ordenadas, escolhas_casos):
         html += f"<th colspan='2'>{caso}</th>"
     html += "</tr><tr>"
     for _ in casos_ordenados:
-        html += "<th>Sim</th><th>Nao</th>"
+        html += "<th>Sim</th><th>Não</th>"
     html += "</tr>"
     for pergunta in perguntas_ordenadas:
         html += "<tr>"
@@ -71,7 +71,7 @@ def gerar_tabela_html(casos_ordenados, perguntas_ordenadas, escolhas_casos):
         for caso in casos_ordenados:
             escolha = escolhas_casos.get(caso, {}).get(pergunta, "-")
             sim_cell = "X" if escolha == "Sim" else ""
-            nao_cell = "X" if escolha == "Nao" else ""
+            nao_cell = "X" if escolha == "Não" else ""
             html += f"<td>{sim_cell}</td><td>{nao_cell}</td>"
         html += "</tr>"
     html += "</table>"
@@ -79,15 +79,15 @@ def gerar_tabela_html(casos_ordenados, perguntas_ordenadas, escolhas_casos):
 
 
 # ---------------------------------------------------------------------------
-# Configuracao da IA
+# Configuração da IA
 # ---------------------------------------------------------------------------
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
 model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
-st.title("Gerador de Relatorios - Mamografia")
+st.title("Gerador de Relatórios - Mamografia")
 
 # ---------------------------------------------------------------------------
-# Inicializacao do session_state
+# Inicialização do session_state
 # ---------------------------------------------------------------------------
 if "dados_cabecalho" not in st.session_state:
     st.session_state.dados_cabecalho = {
@@ -116,7 +116,7 @@ if "identificacao_exames" not in st.session_state:
     st.session_state.identificacao_exames = {}
 
 # ---------------------------------------------------------------------------
-# Barra de progresso da sessao
+# Barra de progresso da sessão
 # ---------------------------------------------------------------------------
 total_casos = 5
 casos_feitos = len(st.session_state.casos_salvos)
@@ -125,22 +125,22 @@ if casos_feitos > 0:
     st.progress(casos_feitos / total_casos)
 
 # ---------------------------------------------------------------------------
-# Cabecalho - dados da instituicao
+# Cabeçalho - dados da instituição
 # ---------------------------------------------------------------------------
 st.markdown("---")
-st.subheader("Dados do Cabecalho")
+st.subheader("Dados do Cabeçalho")
 
 col1, col2 = st.columns(2)
 with col1:
-    fabricante = st.text_input("Mamografo - Fabricante:", value=st.session_state.dados_cabecalho["mamografo_fabricante"])
+    fabricante = st.text_input("Mamógrafo - Fabricante:", value=st.session_state.dados_cabecalho["mamografo_fabricante"])
 with col2:
-    modelo = st.text_input("Mamografo - Modelo:", value=st.session_state.dados_cabecalho["mamografo_modelo"])
+    modelo = st.text_input("Mamógrafo - Modelo:", value=st.session_state.dados_cabecalho["mamografo_modelo"])
 
 cnes = st.text_input("CNES:", value=st.session_state.dados_cabecalho["cnes"])
 qiid = st.text_input("QIID:", value=st.session_state.dados_cabecalho["qiid"])
 
 tipo = st.radio(
-    "Tipo de mamografo:",
+    "Tipo de mamógrafo:",
     ["Convencional", "Digital CR", "Digital DR", "DR retrofit"],
     index=0
     if st.session_state.dados_cabecalho["tipo_mamografo"] is None
@@ -151,7 +151,7 @@ tipo = st.radio(
     key="tipo_mamografo_radio",
 )
 
-instituicao = st.text_input("Instituicao:", value=st.session_state.dados_cabecalho["instituicao"])
+instituicao = st.text_input("Instituição:", value=st.session_state.dados_cabecalho["instituicao"])
 
 col3, col4 = st.columns(2)
 with col3:
@@ -175,61 +175,61 @@ st.session_state.dados_cabecalho = {
 # ---------------------------------------------------------------------------
 perguntas = {
     "Contraste adequado": {
-        "opcoes": {"Sim": "O contraste esta adequado.", "Nao": "O contraste nao esta adequado."},
+        "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
         "sub_opcoes": {
-            "Contraste alto demais": "O contraste da imagem esta alto demais.",
-            "Contraste baixo demais": "O contraste esta baixo demais.",
+            "Contraste alto demais": "O contraste da imagem está alto demais.",
+            "Contraste baixo demais": "O contraste está baixo demais.",
         },
     },
-    "Definicao de estruturas": {
+    "Definição de estruturas": {
         "opcoes": {
-            "Sim": "As estruturas estao bem definidas na imagem.",
-            "Nao": "As estruturas nao estao bem definidas na imagem.",
+            "Sim": "As estruturas estão bem definidas na imagem.",
+            "Não": "As estruturas não estão bem definidas na imagem.",
         },
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
             "Problema B": "Frase gerada para o problema B.",
         },
     },
-    "Saturacao correta nas areas claras": {
+    "Saturação correta nas áreas claras": {
         "opcoes": {
-            "Sim": "A imagem esta bem saturada nas areas claras.",
-            "Nao": "A imagem nao esta bem saturada nas areas claras.",
+            "Sim": "A imagem está bem saturada nas áreas claras.",
+            "Não": "A imagem não está bem saturada nas áreas claras.",
         },
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
             "Problema B": "Frase gerada para o problema B.",
         },
     },
-    "Saturacao correta nas areas escuras": {
+    "Saturação correta nas áreas escuras": {
         "opcoes": {
-            "Sim": "A imagem esta bem saturada nas areas escuras.",
-            "Nao": "A imagem nao esta bem saturada nas areas escuras.",
+            "Sim": "A imagem está bem saturada nas áreas escuras.",
+            "Não": "A imagem não está bem saturada nas áreas escuras.",
         },
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
             "Problema B": "Frase gerada para o problema B.",
         },
     },
-    "Imagem sem ruido": {
-        "opcoes": {"Sim": "A imagem esta sem ruido.", "Nao": "A imagem esta com ruido."},
+    "Imagem sem ruído": {
+        "opcoes": {"Sim": "A imagem está sem ruído.", "Não": "A imagem está com ruído."},
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
             "Problema B": "Frase gerada para o problema B.",
         },
     },
-    "A area de fundo esta adequadamente escura (enegrecimento pelicula)": {
+    "A área de fundo está adequadamente escura (enegrecimento película)": {
         "opcoes": {
-            "Sim": "A area de fundo da imagem esta adequadamente escura.",
-            "Nao": "A area de fundo da imagem nao esta adequadamente escura.",
+            "Sim": "A área de fundo da imagem está adequadamente escura.",
+            "Não": "A área de fundo da imagem não está adequadamente escura.",
         },
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
-            "Problema generico B": "Frase gerada para o problema B.",
+            "Problema genérico B": "Frase gerada para o problema B.",
         },
     },
     "Imagem sem artefatos (se houver, descrever)": {
-        "opcoes": {"Sim": "A imagem nao possui artefatos.", "Nao": "A imagem possui artefatos."},
+        "opcoes": {"Sim": "A imagem não possui artefatos.", "Não": "A imagem possui artefatos."},
         "sub_opcoes": {
             "Problema A": "Frase gerada para o problema A.",
             "Problema B": "Frase gerada para o problema B.",
@@ -238,32 +238,32 @@ perguntas = {
 }
 
 # ---------------------------------------------------------------------------
-# Selecao do caso e perguntas
+# Seleção do caso e perguntas
 # ---------------------------------------------------------------------------
 st.markdown("---")
 caso_atual = st.selectbox("Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
 nome_caso = f"Caso {caso_atual}"
 
-st.header("Aspectos Fisicos da Imagem")
+st.header("Aspectos Físicos da Imagem")
 
 respostas_temporarias = []
 for titulo, info in perguntas.items():
     st.subheader(titulo)
     escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
     sub_escolha = None
-    if "sub_opcoes" in info and escolha == "Nao":
+    if "sub_opcoes" in info and escolha == "Não":
         sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
-    obs = st.text_input("Consideracoes adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
+    obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
     respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
 st.markdown("---")
 id_exame = st.text_input(
-    "Identificacao do Exame:",
+    "Identificação do Exame:",
     value=st.session_state.identificacao_exames.get(nome_caso, ""),
     key=f"id_exame_c{caso_atual}",
 )
 consideracoes_caso = st.text_area(
-    "Consideracoes adicionais para este caso (opcional):",
+    "Considerações adicionais para este caso (opcional):",
     value=st.session_state.consideracoes_caso.get(nome_caso, ""),
     key=f"consideracoes_c{caso_atual}",
     height=100,
@@ -273,17 +273,17 @@ nome_caso = f"Caso {caso_atual}"
 caso_ja_existe = nome_caso in st.session_state.casos_salvos
 confirmacao = True
 if caso_ja_existe:
-    st.warning(f"O {nome_caso} ja foi salvo anteriormente.")
-    confirmacao = st.checkbox("Deseja sobrescrever o relatorio existente?", key=f"conf_{caso_atual}")
+    st.warning(f"O {nome_caso} já foi salvo anteriormente.")
+    confirmacao = st.checkbox("Deseja sobrescrever o relatório existente?", key=f"conf_{caso_atual}")
 
 if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_width=True):
     if caso_ja_existe and not confirmacao:
-        st.warning("Marque a confirmacao para sobrescrever o caso.")
+        st.warning("Marque a confirmação para sobrescrever o caso.")
     else:
         respostas_finais = []
         for item in respostas_temporarias:
             info_pergunta = perguntas[item["titulo"]]
-            if item["escolha"] == "Nao" and item["sub_escolha"]:
+            if item["escolha"] == "Não" and item["sub_escolha"]:
                 frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
             else:
                 frase_base = info_pergunta["opcoes"][item["escolha"]]
@@ -298,11 +298,11 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
 
         escolhas = {item["titulo"]: item["escolha"] for item in respostas_temporarias}
 
-        with st.spinner("IA esta formatando o relatorio..."):
+        with st.spinner("IA está formatando o relatório..."):
             try:
                 prompt = (
-                    f"Deixe essas frases em um unico texto coeso. "
-                    f"Nao mude as frases, apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
+                    f"Deixe essas frases em um único texto coeso. "
+                    f"Não mude as frases, apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
                 )
                 response = model.generate_content(prompt)
 
@@ -315,75 +315,75 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
                 st.success(f"{nome_caso} processado com sucesso!")
                 st.rerun()
             except Exception as e:
-                st.error(f"Erro ao gerar relatorio: {e}")
+                st.error(f"Erro ao gerar relatório: {e}")
 
 # ---------------------------------------------------------------------------
-# Consideracoes gerais
+# Considerações gerais
 # ---------------------------------------------------------------------------
 st.markdown("---")
-st.subheader("Consideracoes Gerais")
+st.subheader("Considerações Gerais")
 st.session_state.consideracoes_gerais = st.text_area(
-    "Digite aqui observacoes que se aplicam a todos os casos:",
+    "Digite aqui observações que se aplicam a todos os casos:",
     value=st.session_state.consideracoes_gerais,
     height=120,
     key="consideracoes_gerais_area",
 )
 
 # ---------------------------------------------------------------------------
-# Historico da sessao
+# Histórico da sessão
 # ---------------------------------------------------------------------------
 if st.session_state.relatorios_ia:
     st.markdown("---")
-    st.header("Historico da Sessao")
+    st.header("Histórico da Sessão")
 
     casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
     abas = st.tabs([f"{c}" for c in casos_ordenados])
     for i, nome in enumerate(casos_ordenados):
         with abas[i]:
             if st.session_state.identificacao_exames.get(nome, "").strip():
-                st.markdown(f"**Identificacao do Exame:** {st.session_state.identificacao_exames[nome]}")
+                st.markdown(f"**Identificação do Exame:** {st.session_state.identificacao_exames[nome]}")
             with st.expander("Ver texto bruto"):
                 st.caption(st.session_state.casos_salvos[nome])
             if st.session_state.consideracoes_caso.get(nome, "").strip():
                 st.info(st.session_state.consideracoes_caso[nome])
-            st.markdown("**Relatorio gerado:**")
+            st.markdown("**Relatório gerado:**")
             st.write(st.session_state.relatorios_ia[nome])
 
 # ---------------------------------------------------------------------------
-# Relatorio geral (quando ha pelo menos 2 casos)
+# Relatório geral (quando há pelo menos 2 casos)
 # ---------------------------------------------------------------------------
 if len(st.session_state.casos_salvos) >= 2:
     st.markdown("---")
-    if st.button("Gerar Relatorio Geral", type="primary", use_container_width=True):
+    if st.button("Gerar Relatório Geral", type="primary", use_container_width=True):
         compilado = "".join([f"\n[{k}]: {v}\n" for k, v in st.session_state.casos_salvos.items()])
         texto_geral_para_ia = compilado
         if st.session_state.consideracoes_gerais.strip():
-            texto_geral_para_ia += f"\n\nConsideracoes gerais do avaliador: {st.session_state.consideracoes_gerais}"
+            texto_geral_para_ia += f"\n\nConsiderações gerais do avaliador: {st.session_state.consideracoes_gerais}"
 
         prompt_geral = (
-            "Com base nos relatorios individuais abaixo, elabore um unico paragrafo resumindo os achados gerais. "
-            "Nao mencione os numeros dos casos, apenas faca um resumo conciso.\n\n"
-            f"Relatorios:\n{texto_geral_para_ia}"
+            "Com base nos relatórios individuais abaixo, elabore um único parágrafo resumindo os achados gerais. "
+            "Não mencione os números dos casos, apenas faça um resumo conciso.\n\n"
+            f"Relatórios:\n{texto_geral_para_ia}"
         )
         try:
             response_geral = model.generate_content(prompt_geral)
             st.session_state.relatorio_geral_salvo = response_geral.text
-            st.success("Relatorio geral gerado!")
+            st.success("Relatório geral gerado!")
             st.rerun()
         except Exception as e:
-            st.error(f"Erro ao gerar relatorio geral: {e}")
+            st.error(f"Erro ao gerar relatório geral: {e}")
 
     if st.session_state.relatorio_geral_salvo:
-        st.markdown("### Relatorio geral para todos os casos")
+        st.markdown("### Relatório Geral Consolidado")
         st.info(st.session_state.relatorio_geral_salvo)
         st.markdown("---")
-        st.subheader("Tabela de Respostas (Sim / Nao)")
+        st.subheader("Tabela de Respostas (Sim / Não)")
         casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
         perguntas_ordenadas = list(perguntas.keys())
         st.markdown(gerar_tabela_html(casos_ordenados, perguntas_ordenadas, st.session_state.escolhas_casos), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
-# Exportacao do documento Word
+# Exportação do documento Word
 # ---------------------------------------------------------------------------
 if st.session_state.relatorios_ia:
     st.markdown("---")
@@ -392,15 +392,15 @@ if st.session_state.relatorios_ia:
     def limpar_formatacao(texto):
         return texto.replace("**", "").replace("__", "").replace("#", "")
 
-    with st.expander("Visualizar Previa do Documento", expanded=True):
+    with st.expander("Visualizar Prévia do Documento", expanded=True):
         cab = st.session_state.dados_cabecalho
         st.markdown(f"""
         <div class='preview-box'>
-            <strong>Cabecalho</strong><br>
-            <strong>Mamografo:</strong> {cab['mamografo_fabricante']} - {cab['mamografo_modelo']}<br>
+            <strong>Cabeçalho</strong><br>
+            <strong>Mamógrafo:</strong> {cab['mamografo_fabricante']} - {cab['mamografo_modelo']}<br>
             <strong>CNES:</strong> {cab['cnes']} &nbsp;|&nbsp; <strong>QIID:</strong> {cab['qiid']}<br>
             <strong>Tipo:</strong> {cab['tipo_mamografo']}<br>
-            <strong>Instituicao:</strong> {cab['instituicao']}<br>
+            <strong>Instituição:</strong> {cab['instituicao']}<br>
             <strong>Cidade/Estado:</strong> {cab['cidade']} - {cab['estado']}
         </div>
         """, unsafe_allow_html=True)
@@ -410,8 +410,8 @@ if st.session_state.relatorios_ia:
         perguntas_ordenadas = list(perguntas.keys())
         st.markdown(gerar_tabela_html(casos_ordenados, perguntas_ordenadas, st.session_state.escolhas_casos), unsafe_allow_html=True)
 
-        st.markdown("**Identificacao dos Exames**")
-        id_tabela = "| Caso | Identificacao do Exame |\n| --- | --- |\n"
+        st.markdown("**Identificação dos Exames**")
+        id_tabela = "| Caso | Identificação do Exame |\n| --- | --- |\n"
         for caso in casos_ordenados:
             id_texto = st.session_state.identificacao_exames.get(caso, "")
             id_tabela += f"| {caso} | {id_texto} |\n"
@@ -425,18 +425,18 @@ if st.session_state.relatorios_ia:
                 st.info(st.session_state.consideracoes_caso[nome_caso])
             st.markdown("---")
         if st.session_state.relatorio_geral_salvo:
-            st.markdown("**Relatorio Geral Consolidado**")
+            st.markdown("**Relatório Geral Consolidado**")
             st.write(st.session_state.relatorio_geral_salvo)
 
     def criar_docx_limpo():
         doc = Document()
 
-        doc.add_heading("Instrumento para a analise da qualidade da mamografia", level=0)
+        doc.add_heading("Instrumento para a análise da qualidade da mamografia", level=0)
         doc.add_paragraph()
 
         cab = st.session_state.dados_cabecalho
         p = doc.add_paragraph()
-        p.add_run("Mamografo (fabricante e modelo): ").bold = True
+        p.add_run("Mamógrafo (fabricante e modelo): ").bold = True
         p.add_run(f"{cab['mamografo_fabricante']} - {cab['mamografo_modelo']}")
 
         p = doc.add_paragraph()
@@ -446,7 +446,7 @@ if st.session_state.relatorios_ia:
         p.add_run(cab["qiid"])
 
         p = doc.add_paragraph()
-        p.add_run("Tipo de mamografo: ").bold = True
+        p.add_run("Tipo de mamógrafo: ").bold = True
         opcoes_tipo = ["Convencional", "Digital CR", "Digital DR", "DR retrofit"]
         for opcao in opcoes_tipo:
             marcado = "X" if cab["tipo_mamografo"] == opcao else "-"
@@ -454,7 +454,7 @@ if st.session_state.relatorios_ia:
 
         doc.add_paragraph()
         p = doc.add_paragraph()
-        p.add_run("Instituicao: ").bold = True
+        p.add_run("Instituição: ").bold = True
         p.add_run(cab["instituicao"])
 
         p = doc.add_paragraph()
@@ -464,7 +464,7 @@ if st.session_state.relatorios_ia:
         p.add_run(cab["estado"])
         doc.add_paragraph()
 
-        doc.add_heading("Tabela de Respostas (Sim/Nao)", level=1)
+        doc.add_heading("Tabela de Respostas (Sim/Não)", level=1)
         casos_ord = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
         perguntas_ord = list(perguntas.keys())
         num_casos = len(casos_ord)
@@ -485,7 +485,7 @@ if st.session_state.relatorios_ia:
             col_sim = 1 + idx * 2
             col_nao = col_sim + 1
             tabela.cell(1, col_sim).text = "Sim"
-            tabela.cell(1, col_nao).text = "Nao"
+            tabela.cell(1, col_nao).text = "Não"
 
         for i, pergunta in enumerate(perguntas_ord):
             linha_atual = i + 2
@@ -495,11 +495,11 @@ if st.session_state.relatorios_ia:
                 col_sim = 1 + j * 2
                 col_nao = col_sim + 1
                 tabela.cell(linha_atual, col_sim).text = "X" if escolha == "Sim" else ""
-                tabela.cell(linha_atual, col_nao).text = "X" if escolha == "Nao" else ""
+                tabela.cell(linha_atual, col_nao).text = "X" if escolha == "Não" else ""
 
         doc.add_page_break()
 
-        doc.add_heading("Identificacao dos Exames", level=2)
+        doc.add_heading("Identificação dos Exames", level=2)
         mini_tabela = doc.add_table(rows=2, cols=num_casos)
         mini_tabela.style = "Table Grid"
         for j, caso in enumerate(casos_ord):
@@ -508,7 +508,7 @@ if st.session_state.relatorios_ia:
             mini_tabela.rows[1].cells[j].text = st.session_state.identificacao_exames.get(caso, "")
         doc.add_paragraph()
 
-        doc.add_heading("Consideracoes Especificas", level=0)
+        doc.add_heading("Considerações Específicas", level=0)
         for nome_caso in casos_ord:
             doc.add_heading(nome_caso, level=1)
             texto_ia = st.session_state.relatorios_ia[nome_caso]
@@ -516,7 +516,7 @@ if st.session_state.relatorios_ia:
                 if linha.strip():
                     doc.add_paragraph(limpar_formatacao(linha))
             if st.session_state.consideracoes_caso.get(nome_caso, "").strip():
-                doc.add_heading("Consideracoes Adicionais", level=2)
+                doc.add_heading("Considerações Adicionais", level=2)
                 doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_caso[nome_caso]))
             doc.add_paragraph("-" * 30)
 
@@ -540,10 +540,10 @@ if st.session_state.relatorios_ia:
     )
 
 # ---------------------------------------------------------------------------
-# Botao de reset
+# Botão de reset
 # ---------------------------------------------------------------------------
 st.markdown("---")
-if st.button("Limpar todos os dados da sessao"):
+if st.button("Limpar todos os dados da sessão"):
     for chave in [
         "casos_salvos",
         "relatorios_ia",
