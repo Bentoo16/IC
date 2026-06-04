@@ -13,6 +13,7 @@ st.markdown("""
         width: 100%;
         border-collapse: collapse;
         font-size: 0.85rem;
+        margin-bottom: 1.5rem;
     }
     .tabela-respostas th {
         background: #1a1a2e;
@@ -76,6 +77,13 @@ def gerar_tabela_html(casos_ordenados, perguntas_ordenadas, escolhas_casos):
         html += "</tr>"
     html += "</table>"
     return html
+
+
+def contar_perguntas(grupos):
+    total = 0
+    for qs in grupos.values():
+        total += len(qs)
+    return total
 
 
 # ---------------------------------------------------------------------------
@@ -171,68 +179,100 @@ st.session_state.dados_cabecalho = {
 }
 
 # ---------------------------------------------------------------------------
-# Biblioteca de perguntas
+# Biblioteca de perguntas (organizada por grupos)
 # ---------------------------------------------------------------------------
 perguntas = {
-    "Contraste adequado": {
-        "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
-        "sub_opcoes": {
-            "Contraste alto demais": "O contraste da imagem está alto demais.",
-            "Contraste baixo demais": "O contraste está baixo demais.",
+    "Aspectos Físicos da Imagem": {
+        "Contraste adequado": {
+            "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
+            "sub_opcoes": {
+                "Contraste alto demais": "O contraste da imagem está alto demais.",
+                "Contraste baixo demais": "O contraste está baixo demais.",
+            },
+        },
+        "Definição de estruturas": {
+            "opcoes": {
+                "Sim": "As estruturas estão bem definidas na imagem.",
+                "Não": "As estruturas não estão bem definidas na imagem.",
+            },
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
+        },
+        "Saturação correta nas áreas claras": {
+            "opcoes": {
+                "Sim": "A imagem está bem saturada nas áreas claras.",
+                "Não": "A imagem não está bem saturada nas áreas claras.",
+            },
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
+        },
+        "Saturação correta nas áreas escuras": {
+            "opcoes": {
+                "Sim": "A imagem está bem saturada nas áreas escuras.",
+                "Não": "A imagem não está bem saturada nas áreas escuras.",
+            },
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
+        },
+        "Imagem sem ruído": {
+            "opcoes": {"Sim": "A imagem está sem ruído.", "Não": "A imagem está com ruído."},
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
+        },
+        "A área de fundo está adequadamente escura (enegrecimento película)": {
+            "opcoes": {
+                "Sim": "A área de fundo da imagem está adequadamente escura.",
+                "Não": "A área de fundo da imagem não está adequadamente escura.",
+            },
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema genérico B": "Frase gerada para o problema B.",
+            },
+        },
+        "Imagem sem artefatos (se houver, descrever)": {
+            "opcoes": {"Sim": "A imagem não possui artefatos.", "Não": "A imagem possui artefatos."},
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
         },
     },
-    "Definição de estruturas": {
-        "opcoes": {
-            "Sim": "As estruturas estão bem definidas na imagem.",
-            "Não": "As estruturas não estão bem definidas na imagem.",
+    "Avaliação dos Critérios de Laudos": {
+        "Resumo da história presente": {
+            "opcoes": {"Sim": "O resumo da história presente está adequado.", "Não": "O resumo da história presente não está adequado."},
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
         },
-        "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema A.",
-            "Problema B": "Frase gerada para o problema B.",
+        "Utiliza corretamente o Léxico BI-RADS ou SISMAMA": {
+            "opcoes": {"Sim": "Utiliza corretamente o léxico BI-RADS ou SISMAMA.", "Não": "Não utiliza corretamente o léxico BI-RADS ou SISMAMA."},
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
         },
-    },
-    "Saturação correta nas áreas claras": {
-        "opcoes": {
-            "Sim": "A imagem está bem saturada nas áreas claras.",
-            "Não": "A imagem não está bem saturada nas áreas claras.",
+        "Classifica corretamente o exame segundo o BI-RADS": {
+            "opcoes": {"Sim": "Classifica corretamente o exame segundo o BI-RADS.", "Não": "Não classifica corretamente o exame segundo o BI-RADS."},
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
         },
-        "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema A.",
-            "Problema B": "Frase gerada para o problema B.",
-        },
-    },
-    "Saturação correta nas áreas escuras": {
-        "opcoes": {
-            "Sim": "A imagem está bem saturada nas áreas escuras.",
-            "Não": "A imagem não está bem saturada nas áreas escuras.",
-        },
-        "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema A.",
-            "Problema B": "Frase gerada para o problema B.",
-        },
-    },
-    "Imagem sem ruído": {
-        "opcoes": {"Sim": "A imagem está sem ruído.", "Não": "A imagem está com ruído."},
-        "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema A.",
-            "Problema B": "Frase gerada para o problema B.",
-        },
-    },
-    "A área de fundo está adequadamente escura (enegrecimento película)": {
-        "opcoes": {
-            "Sim": "A área de fundo da imagem está adequadamente escura.",
-            "Não": "A área de fundo da imagem não está adequadamente escura.",
-        },
-        "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema A.",
-            "Problema genérico B": "Frase gerada para o problema B.",
-        },
-    },
-    "Imagem sem artefatos (se houver, descrever)": {
-        "opcoes": {"Sim": "A imagem não possui artefatos.", "Não": "A imagem possui artefatos."},
-        "sub_opcoes": {
-            "Problema A": "Frase gerada para o problema A.",
-            "Problema B": "Frase gerada para o problema B.",
+        "Interpretou corretamente todos os achados do exame": {
+            "opcoes": {"Sim": "Interpretou corretamente todos os achados do exame.", "Não": "Não interpretou corretamente todos os achados do exame."},
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
         },
     },
 }
@@ -244,17 +284,17 @@ st.markdown("---")
 caso_atual = st.selectbox("Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
 nome_caso = f"Caso {caso_atual}"
 
-st.header("Aspectos Físicos da Imagem")
-
 respostas_temporarias = []
-for titulo, info in perguntas.items():
-    st.subheader(titulo)
-    escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
-    sub_escolha = None
-    if "sub_opcoes" in info and escolha == "Não":
-        sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
-    obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
-    respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
+for nome_grupo, questoes in perguntas.items():
+    st.header(nome_grupo)
+    for titulo, info in questoes.items():
+        st.subheader(titulo)
+        escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
+        sub_escolha = None
+        if "sub_opcoes" in info and escolha == "Não":
+            sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
+        obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
+        respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
 st.markdown("---")
 id_exame = st.text_input(
@@ -282,7 +322,11 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
     else:
         respostas_finais = []
         for item in respostas_temporarias:
-            info_pergunta = perguntas[item["titulo"]]
+            # Encontrar o grupo e a pergunta
+            for questoes in perguntas.values():
+                if item["titulo"] in questoes:
+                    info_pergunta = questoes[item["titulo"]]
+                    break
             if item["escolha"] == "Não" and item["sub_escolha"]:
                 frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
             else:
@@ -377,10 +421,11 @@ if len(st.session_state.casos_salvos) >= 2:
         st.markdown("### Relatório Geral Consolidado")
         st.info(st.session_state.relatorio_geral_salvo)
         st.markdown("---")
-        st.subheader("Tabela de Respostas (Sim / Não)")
         casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
-        perguntas_ordenadas = list(perguntas.keys())
-        st.markdown(gerar_tabela_html(casos_ordenados, perguntas_ordenadas, st.session_state.escolhas_casos), unsafe_allow_html=True)
+        for nome_grupo, questoes in perguntas.items():
+            st.subheader(f"Tabela de Respostas - {nome_grupo}")
+            perguntas_ordenadas = list(questoes.keys())
+            st.markdown(gerar_tabela_html(casos_ordenados, perguntas_ordenadas, st.session_state.escolhas_casos), unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # Exportação do documento Word
@@ -405,10 +450,11 @@ if st.session_state.relatorios_ia:
         </div>
         """, unsafe_allow_html=True)
 
-        st.markdown("**Tabela de Respostas**")
         casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
-        perguntas_ordenadas = list(perguntas.keys())
-        st.markdown(gerar_tabela_html(casos_ordenados, perguntas_ordenadas, st.session_state.escolhas_casos), unsafe_allow_html=True)
+        for nome_grupo, questoes in perguntas.items():
+            st.markdown(f"**Tabela de Respostas - {nome_grupo}**")
+            perguntas_ordenadas = list(questoes.keys())
+            st.markdown(gerar_tabela_html(casos_ordenados, perguntas_ordenadas, st.session_state.escolhas_casos), unsafe_allow_html=True)
 
         st.markdown("**Identificação dos Exames**")
         id_tabela = "| Caso | Identificação do Exame |\n| --- | --- |\n"
@@ -464,41 +510,47 @@ if st.session_state.relatorios_ia:
         p.add_run(cab["estado"])
         doc.add_paragraph()
 
-        doc.add_heading("Tabela de Respostas (Sim/Não)", level=1)
+        # Tabelas de respostas - uma por grupo
         casos_ord = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
-        perguntas_ord = list(perguntas.keys())
         num_casos = len(casos_ord)
-        total_colunas = 1 + num_casos * 2
-        tabela = doc.add_table(rows=2 + len(perguntas_ord), cols=total_colunas)
-        tabela.style = "Table Grid"
 
-        tabela.cell(0, 0).merge(tabela.cell(1, 0))
-        tabela.cell(0, 0).text = "Pergunta"
+        for nome_grupo, questoes in perguntas.items():
+            doc.add_heading(f"Tabela de Respostas - {nome_grupo}", level=1)
+            perguntas_ord = list(questoes.keys())
+            total_colunas = 1 + num_casos * 2
+            tabela = doc.add_table(rows=2 + len(perguntas_ord), cols=total_colunas)
+            tabela.style = "Table Grid"
 
-        for idx, caso in enumerate(casos_ord):
-            col_inicio = 1 + idx * 2
-            col_fim = col_inicio + 1
-            tabela.cell(0, col_inicio).merge(tabela.cell(0, col_fim))
-            tabela.cell(0, col_inicio).text = caso
+            tabela.cell(0, 0).merge(tabela.cell(1, 0))
+            tabela.cell(0, 0).text = "Pergunta"
 
-        for idx in range(num_casos):
-            col_sim = 1 + idx * 2
-            col_nao = col_sim + 1
-            tabela.cell(1, col_sim).text = "Sim"
-            tabela.cell(1, col_nao).text = "Não"
+            for idx, caso in enumerate(casos_ord):
+                col_inicio = 1 + idx * 2
+                col_fim = col_inicio + 1
+                tabela.cell(0, col_inicio).merge(tabela.cell(0, col_fim))
+                tabela.cell(0, col_inicio).text = caso
 
-        for i, pergunta in enumerate(perguntas_ord):
-            linha_atual = i + 2
-            tabela.cell(linha_atual, 0).text = pergunta
-            for j, caso in enumerate(casos_ord):
-                escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
-                col_sim = 1 + j * 2
+            for idx in range(num_casos):
+                col_sim = 1 + idx * 2
                 col_nao = col_sim + 1
-                tabela.cell(linha_atual, col_sim).text = "X" if escolha == "Sim" else ""
-                tabela.cell(linha_atual, col_nao).text = "X" if escolha == "Não" else ""
+                tabela.cell(1, col_sim).text = "Sim"
+                tabela.cell(1, col_nao).text = "Não"
+
+            for i, pergunta in enumerate(perguntas_ord):
+                linha_atual = i + 2
+                tabela.cell(linha_atual, 0).text = pergunta
+                for j, caso in enumerate(casos_ord):
+                    escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
+                    col_sim = 1 + j * 2
+                    col_nao = col_sim + 1
+                    tabela.cell(linha_atual, col_sim).text = "X" if escolha == "Sim" else ""
+                    tabela.cell(linha_atual, col_nao).text = "X" if escolha == "Não" else ""
+
+            doc.add_paragraph()
 
         doc.add_page_break()
 
+        # Identificação dos exames
         doc.add_heading("Identificação dos Exames", level=2)
         mini_tabela = doc.add_table(rows=2, cols=num_casos)
         mini_tabela.style = "Table Grid"
@@ -508,6 +560,7 @@ if st.session_state.relatorios_ia:
             mini_tabela.rows[1].cells[j].text = st.session_state.identificacao_exames.get(caso, "")
         doc.add_paragraph()
 
+        # Considerações específicas
         doc.add_heading("Considerações Específicas", level=0)
         for nome_caso in casos_ord:
             doc.add_heading(nome_caso, level=1)
