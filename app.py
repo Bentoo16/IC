@@ -418,7 +418,7 @@ if len(st.session_state.casos_salvos) >= 2:
             st.error(f"Erro ao gerar relatório geral: {e}")
 
     if st.session_state.relatorio_geral_salvo:
-        st.markdown("### Relatório Geral Consolidado")
+        st.markdown("### Relatório Geral ")
         st.info(st.session_state.relatorio_geral_salvo)
         st.markdown("---")
         casos_ordenados = sorted(st.session_state.relatorios_ia.keys(), key=extrair_numero)
