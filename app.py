@@ -280,6 +280,13 @@ perguntas = {
                 "Problema B": "Frase gerada para o problema B.",
             },
         },
+        "Recomendação correta segundo o BI-RADS": {
+            "opcoes": {"Sim": "Recomenda corretamente o exame segundo o BI-RADS.", "Não": "Não recomenda corretamente o exame segundo o BI-RADS."},
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
+        },
         "Interpretou corretamente todos os achados do exame": {
             "opcoes": {"Sim": "Interpretou corretamente todos os achados do exame.", "Não": "Não interpretou corretamente todos os achados do exame."},
             "sub_opcoes": {
