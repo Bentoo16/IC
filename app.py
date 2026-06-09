@@ -18,7 +18,7 @@ st.markdown("""
         margin-bottom: 1.5rem;
     }
     .tabela-respostas th {
-        background: #FFD700;
+        background: #6C757D;
         color: #333;
         padding: 0.5rem;
         text-align: center;
