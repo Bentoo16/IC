@@ -471,7 +471,7 @@ if st.session_state.relatorios_ia:
                 st.info(st.session_state.consideracoes_caso[nome_caso])
             st.markdown("---")
         if st.session_state.relatorio_geral_salvo:
-            st.markdown("**Relatório Geral Consolidado**")
+            st.markdown("**Relatório Geral **")
             st.write(st.session_state.relatorio_geral_salvo)
 
     def criar_docx_limpo():
