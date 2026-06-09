@@ -3,6 +3,7 @@ import google.generativeai as genai
 from docx import Document
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from docx.shared import RGBColor
 from io import BytesIO
 import re
 
@@ -19,10 +20,13 @@ st.markdown("""
     }
     .tabela-respostas th {
         background: #6C757D;
-        color: #333;
+        color: white;
         padding: 0.5rem;
         text-align: center;
-        border: 1px solid #BFA000;
+        border: 1px solid #555;
+    }
+    .tabela-respostas th.caso-header {
+        color: #FF0000;
     }
     .tabela-respostas td {
         padding: 0.4rem 0.5rem;
@@ -63,7 +67,7 @@ def gerar_tabela_html(casos_ordenados, perguntas_ordenadas, escolhas_casos):
     html = "<table class='tabela-respostas'>"
     html += "<tr><th rowspan='2'>Pergunta</th>"
     for caso in casos_ordenados:
-        html += f"<th colspan='2'>{caso}</th>"
+        html += f"<th class='caso-header' colspan='2'>{caso}</th>"
     html += "</tr><tr>"
     for _ in casos_ordenados:
         html += "<th>Sim</th><th>Não</th>"
@@ -533,23 +537,26 @@ if st.session_state.relatorios_ia:
 
             tabela.cell(0, 0).merge(tabela.cell(1, 0))
             tabela.cell(0, 0).text = "Pergunta"
-            set_cell_shading(tabela.cell(0, 0), "FFD700")
-            set_cell_shading(tabela.cell(1, 0), "FFD700")
+            set_cell_shading(tabela.cell(0, 0), "6C757D")
+            set_cell_shading(tabela.cell(1, 0), "6C757D")
 
             for idx, caso in enumerate(casos_ord):
                 col_inicio = 1 + idx * 2
                 col_fim = col_inicio + 1
                 tabela.cell(0, col_inicio).merge(tabela.cell(0, col_fim))
-                tabela.cell(0, col_inicio).text = caso
-                set_cell_shading(tabela.cell(0, col_inicio), "FFD700")
+                cell_caso = tabela.cell(0, col_inicio)
+                cell_caso.text = ""
+                run = cell_caso.paragraphs[0].add_run(caso)
+                run.font.color.rgb = RGBColor(0xFF, 0x00, 0x00)
+                set_cell_shading(cell_caso, "6C757D")
 
             for idx in range(num_casos):
                 col_sim = 1 + idx * 2
                 col_nao = col_sim + 1
                 tabela.cell(1, col_sim).text = "Sim"
-                set_cell_shading(tabela.cell(1, col_sim), "FFD700")
+                set_cell_shading(tabela.cell(1, col_sim), "6C757D")
                 tabela.cell(1, col_nao).text = "Não"
-                set_cell_shading(tabela.cell(1, col_nao), "FFD700")
+                set_cell_shading(tabela.cell(1, col_nao), "6C757D")
 
             for i, pergunta in enumerate(perguntas_ord):
                 linha_atual = i + 2
