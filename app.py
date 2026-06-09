@@ -1,6 +1,8 @@
 import streamlit as st
 import google.generativeai as genai
 from docx import Document
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
 from io import BytesIO
 import re
 
@@ -16,11 +18,11 @@ st.markdown("""
         margin-bottom: 1.5rem;
     }
     .tabela-respostas th {
-        background: #1a1a2e;
-        color: white;
+        background: #FFD700;
+        color: #333;
         padding: 0.5rem;
         text-align: center;
-        border: 1px solid #333;
+        border: 1px solid #BFA000;
     }
     .tabela-respostas td {
         padding: 0.4rem 0.5rem;
@@ -84,6 +86,13 @@ def contar_perguntas(grupos):
     for qs in grupos.values():
         total += len(qs)
     return total
+
+
+def set_cell_shading(cell, color):
+    shading = OxmlElement('w:shd')
+    shading.set(qn('w:fill'), color)
+    shading.set(qn('w:val'), 'clear')
+    cell._tc.get_or_add_tcPr().append(shading)
 
 
 # ---------------------------------------------------------------------------
@@ -285,16 +294,17 @@ caso_atual = st.selectbox("Escolha o Caso que vai analisar agora:", [1, 2, 3, 4,
 nome_caso = f"Caso {caso_atual}"
 
 respostas_temporarias = []
-for nome_grupo, questoes in perguntas.items():
-    st.header(nome_grupo)
-    for titulo, info in questoes.items():
-        st.subheader(titulo)
-        escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
-        sub_escolha = None
-        if "sub_opcoes" in info and escolha == "Não":
-            sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
-        obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
-        respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
+abas_grupos = st.tabs(list(perguntas.keys()))
+for idx, (nome_grupo, questoes) in enumerate(perguntas.items()):
+    with abas_grupos[idx]:
+        for titulo, info in questoes.items():
+            st.subheader(titulo)
+            escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
+            sub_escolha = None
+            if "sub_opcoes" in info and escolha == "Não":
+                sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
+            obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
+            respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
 st.markdown("---")
 id_exame = st.text_input(
@@ -523,18 +533,23 @@ if st.session_state.relatorios_ia:
 
             tabela.cell(0, 0).merge(tabela.cell(1, 0))
             tabela.cell(0, 0).text = "Pergunta"
+            set_cell_shading(tabela.cell(0, 0), "FFD700")
+            set_cell_shading(tabela.cell(1, 0), "FFD700")
 
             for idx, caso in enumerate(casos_ord):
                 col_inicio = 1 + idx * 2
                 col_fim = col_inicio + 1
                 tabela.cell(0, col_inicio).merge(tabela.cell(0, col_fim))
                 tabela.cell(0, col_inicio).text = caso
+                set_cell_shading(tabela.cell(0, col_inicio), "FFD700")
 
             for idx in range(num_casos):
                 col_sim = 1 + idx * 2
                 col_nao = col_sim + 1
                 tabela.cell(1, col_sim).text = "Sim"
+                set_cell_shading(tabela.cell(1, col_sim), "FFD700")
                 tabela.cell(1, col_nao).text = "Não"
+                set_cell_shading(tabela.cell(1, col_nao), "FFD700")
 
             for i, pergunta in enumerate(perguntas_ord):
                 linha_atual = i + 2
