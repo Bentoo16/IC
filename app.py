@@ -19,11 +19,11 @@ st.markdown("""
         margin-bottom: 1.5rem;
     }
     .tabela-respostas th {
-        background: #6C757D;
-        color: white;
+        background: #E0E0E0;
+        color: #333;
         padding: 0.5rem;
         text-align: center;
-        border: 1px solid #555;
+        border: 1px solid #ccc;
     }
     .tabela-respostas th.caso-header {
         color: #FF0000;
@@ -537,8 +537,8 @@ if st.session_state.relatorios_ia:
 
             tabela.cell(0, 0).merge(tabela.cell(1, 0))
             tabela.cell(0, 0).text = "Pergunta"
-            set_cell_shading(tabela.cell(0, 0), "6C757D")
-            set_cell_shading(tabela.cell(1, 0), "6C757D")
+            set_cell_shading(tabela.cell(0, 0), "E0E0E0")
+            set_cell_shading(tabela.cell(1, 0), "E0E0E0")
 
             for idx, caso in enumerate(casos_ord):
                 col_inicio = 1 + idx * 2
@@ -548,15 +548,15 @@ if st.session_state.relatorios_ia:
                 cell_caso.text = ""
                 run = cell_caso.paragraphs[0].add_run(caso)
                 run.font.color.rgb = RGBColor(0xFF, 0x00, 0x00)
-                set_cell_shading(cell_caso, "6C757D")
+                set_cell_shading(cell_caso, "E0E0E0")
 
             for idx in range(num_casos):
                 col_sim = 1 + idx * 2
                 col_nao = col_sim + 1
                 tabela.cell(1, col_sim).text = "Sim"
-                set_cell_shading(tabela.cell(1, col_sim), "6C757D")
+                set_cell_shading(tabela.cell(1, col_sim), "E0E0E0")
                 tabela.cell(1, col_nao).text = "Não"
-                set_cell_shading(tabela.cell(1, col_nao), "6C757D")
+                set_cell_shading(tabela.cell(1, col_nao), "E0E0E0")
 
             for i, pergunta in enumerate(perguntas_ord):
                 linha_atual = i + 2
