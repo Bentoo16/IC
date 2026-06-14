@@ -122,6 +122,8 @@ if "dados_cabecalho" not in st.session_state:
         "estado": "",
         "servico": "",
     }
+if "servico" not in st.session_state.dados_cabecalho:
+    st.session_state.dados_cabecalho["servico"] = ""
 if "casos_salvos" not in st.session_state:
     st.session_state.casos_salvos = {}
 if "relatorios_ia" not in st.session_state:
