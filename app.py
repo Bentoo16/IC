@@ -103,7 +103,7 @@ def set_cell_shading(cell, color):
 # Configuração da IA
 # ---------------------------------------------------------------------------
 genai.configure(api_key=st.secrets["GOOGLE_API_KEY"])
-model = genai.GenerativeModel('gemini-2.5-flash-lite')
+model = genai.GenerativeModel('gemini-3.1-flash-lite')
 
 st.title("Gerador de Relatórios - Mamografia")
 
