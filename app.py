@@ -120,6 +120,7 @@ if "dados_cabecalho" not in st.session_state:
         "instituicao": "",
         "cidade": "",
         "estado": "",
+        "servico": "",
     }
 if "casos_salvos" not in st.session_state:
     st.session_state.casos_salvos = {}
@@ -180,6 +181,8 @@ with col3:
 with col4:
     estado = st.text_input("Estado:", value=st.session_state.dados_cabecalho["estado"])
 
+servico = st.text_input("Serviço:", value=st.session_state.dados_cabecalho["servico"])
+
 st.session_state.dados_cabecalho = {
     "mamografo_fabricante": fabricante,
     "mamografo_modelo": modelo,
@@ -189,6 +192,7 @@ st.session_state.dados_cabecalho = {
     "instituicao": instituicao,
     "cidade": cidade,
     "estado": estado,
+    "servico": servico,
 }
 
 # ---------------------------------------------------------------------------
@@ -587,6 +591,19 @@ if st.session_state.relatorios_ia:
             mini_tabela.rows[0].cells[j].text = caso
         for j, caso in enumerate(casos_ord):
             mini_tabela.rows[1].cells[j].text = st.session_state.identificacao_exames.get(caso, "")
+        doc.add_paragraph()
+
+        # Anexo
+        doc.add_heading("Anexo ao instrumento para análise da qualidade da mamografia", level=0)
+        p = doc.add_paragraph()
+        p.add_run("Serviço: ").bold = True
+        p.add_run(cab["servico"])
+        p = doc.add_paragraph()
+        p.add_run("CNES: ").bold = True
+        p.add_run(cab["cnes"])
+        p = doc.add_paragraph()
+        p.add_run("QIID: ").bold = True
+        p.add_run(cab["qiid"])
         doc.add_paragraph()
 
         # Considerações específicas
