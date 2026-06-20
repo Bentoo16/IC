@@ -558,6 +558,8 @@ if st.session_state.relatorios_ia:
 
         if st.session_state.relatorio_geral_salvo:
             doc.add_paragraph()
+            p = doc.add_paragraph()
+            p.add_run("Todos os casos:").bold = True
             for linha in st.session_state.relatorio_geral_salvo.strip().split("\n"):
                 if linha.strip():
                     doc.add_paragraph(limpar_formatacao(linha))
