@@ -136,6 +136,8 @@ if "consideracoes_gerais" not in st.session_state:
     st.session_state.consideracoes_gerais = ""
 if "escolhas_casos" not in st.session_state:
     st.session_state.escolhas_casos = {}
+if "sub_escolhas_casos" not in st.session_state:
+    st.session_state.sub_escolhas_casos = {}
 if "identificacao_exames" not in st.session_state:
     st.session_state.identificacao_exames = {}
 
@@ -203,39 +205,19 @@ st.session_state.dados_cabecalho = {
 perguntas = {
     "Avaliação dos Critérios de Laudos": {
         "Resumo da história presente": {
-            "opcoes": {"Sim": "O resumo da história presente está adequado.", "Não": "O resumo da história presente não está adequado."},
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
+            "opcoes": {"Sim": " ", "Não": "É importante que nos laudos conste a indicação do exame. Essa indicação deve conter uma história resumida da paciente (exame de rastreamento x diagnóstico / história familiar / antecedentes cirúrgicos e resultados de biópsias / sintomas e queixas da paciente ... )."},
         },
         "Utiliza corretamente o Léxico BI-RADS ou SISMAMA": {
-            "opcoes": {"Sim": "Utiliza corretamente o léxico BI-RADS ou SISMAMA.", "Não": "Não utiliza corretamente o léxico BI-RADS ou SISMAMA."},
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
+            "opcoes": {"Sim": " ", "Não": "No laudo deste exame não foi utilizado corretamente o léxico do BI-RADS® ou do SISMAMA."},
         },
         "Classifica corretamente o exame segundo o BI-RADS": {
-            "opcoes": {"Sim": "Classifica corretamente o exame segundo o BI-RADS.", "Não": "Não classifica corretamente o exame segundo o BI-RADS."},
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
+            "opcoes": {"Sim": " ", "Não": "O exame não foi classificado corretamente."},
         },
         "Recomendação correta segundo o BI-RADS": {
-            "opcoes": {"Sim": "Recomenda corretamente o exame segundo o BI-RADS.", "Não": "Não recomenda corretamente o exame segundo o BI-RADS."},
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
+            "opcoes": {"Sim": "Recomenda corretamente o exame segundo o BI-RADS.", "Não": "No laudo deste exame não consta a recomendação de conduta em relação ao achado radiográfico reportado."},            
         },
         "Interpretou corretamente todos os achados do exame": {
             "opcoes": {"Sim": "Interpretou corretamente todos os achados do exame.", "Não": "Não interpretou corretamente todos os achados do exame."},
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
         },
     },
 }
@@ -303,6 +285,7 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
             texto_para_ia += f"\n\n{consideracoes_caso}"
 
         escolhas = {item["titulo"]: item["escolha"] for item in respostas_temporarias}
+        sub_escolhas = {item["titulo"]: item["sub_escolha"] for item in respostas_temporarias if item["sub_escolha"]}
 
         with st.spinner("IA está formatando o relatório..."):
             try:
@@ -316,6 +299,7 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
                 st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
                 st.session_state.identificacao_exames[nome_caso] = id_exame
                 st.session_state.escolhas_casos[nome_caso] = escolhas
+                st.session_state.sub_escolhas_casos[nome_caso] = sub_escolhas
                 st.session_state.relatorios_ia[nome_caso] = response.text
 
                 st.success(f"{nome_caso} processado com sucesso!")
@@ -558,19 +542,23 @@ if st.session_state.relatorios_ia:
 
         # Recomendações
         recomendacoes = {
-            "Recomendação correta segundo o BI-RADS":
-                "Para cada classificação é importante descrever a recomendação apropriada, "
-                "segundo a quinta edição do BI-RADS®, conforme determina a Portaria de Consolidação "
-                "nº 5 GM/MS de 28/09/2017, que no seu anexo XXVIII, estabelece: "
-                "\"o laudo radiográfico deve conter as seguintes informações: "
-                "a) identificação do serviço, da idade do examinado e data do exame; "
-                "b) se exame de rastreamento ou de diagnóstico; "
-                "c) número de filmes ou imagens; "
-                "d) padrão mamário; "
-                "e) achados radiográficos; "
-                "f) classificação BI-RADS®; "
-                "g) recomendação de conduta; e "
-                "h) nome e assinatura do médico interpretador do exame.\"",
+            "Recomendação correta segundo o BI-RADS": {
+                "default":
+                    "Para cada classificação é importante descrever a recomendação apropriada, "
+                    "segundo a quinta edição do BI-RADS®, conforme determina a Portaria de Consolidação "
+                    "nº 5 GM/MS de 28/09/2017, que no seu anexo XXVIII, estabelece: "
+                    "\"o laudo radiográfico deve conter as seguintes informações: "
+                    "a) identificação do serviço, da idade do examinado e data do exame; "
+                    "b) se exame de rastreamento ou de diagnóstico; "
+                    "c) número de filmes ou imagens; "
+                    "d) padrão mamário; "
+                    "e) achados radiográficos; "
+                    "f) classificação BI-RADS®; "
+                    "g) recomendação de conduta; e "
+                    "h) nome e assinatura do médico interpretador do exame.\"",
+                "Problema A": "Recomendação específica para o Problema A.",
+                "Problema B": "Recomendação específica para o Problema B.",
+            },
         }
         tem_recomendacao = any(
             st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não"
@@ -580,8 +568,10 @@ if st.session_state.relatorios_ia:
         if tem_recomendacao:
             doc.add_heading("Recomendações", level=0)
             for caso in casos_ord:
-                for pergunta, texto in recomendacoes.items():
+                for pergunta, textos in recomendacoes.items():
                     if st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não":
+                        sub = st.session_state.sub_escolhas_casos.get(caso, {}).get(pergunta, "")
+                        texto = textos.get(sub, textos["default"])
                         p = doc.add_paragraph(style="List Bullet")
                         p.add_run(f"{caso} - {texto}")
 
@@ -618,6 +608,7 @@ if st.button("Limpar todos os dados da sessão"):
         "consideracoes_caso",
         "consideracoes_gerais",
         "escolhas_casos",
+        "sub_escolhas_casos",
         "dados_cabecalho",
         "identificacao_exames",
     ]:
