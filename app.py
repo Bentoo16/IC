@@ -556,6 +556,35 @@ if st.session_state.relatorios_ia:
                 doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_caso[nome_caso]))
             doc.add_paragraph("-" * 30)
 
+        # Recomendações
+        recomendacoes = {
+            "Recomendação correta segundo o BI-RADS":
+                "Para cada classificação é importante descrever a recomendação apropriada, "
+                "segundo a quinta edição do BI-RADS®, conforme determina a Portaria de Consolidação "
+                "nº 5 GM/MS de 28/09/2017, que no seu anexo XXVIII, estabelece: "
+                "\"o laudo radiográfico deve conter as seguintes informações: "
+                "a) identificação do serviço, da idade do examinado e data do exame; "
+                "b) se exame de rastreamento ou de diagnóstico; "
+                "c) número de filmes ou imagens; "
+                "d) padrão mamário; "
+                "e) achados radiográficos; "
+                "f) classificação BI-RADS®; "
+                "g) recomendação de conduta; e "
+                "h) nome e assinatura do médico interpretador do exame.\"",
+        }
+        tem_recomendacao = any(
+            st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não"
+            for caso in casos_ord
+            for pergunta in recomendacoes
+        )
+        if tem_recomendacao:
+            doc.add_heading("Recomendações", level=0)
+            for caso in casos_ord:
+                for pergunta, texto in recomendacoes.items():
+                    if st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não":
+                        p = doc.add_paragraph(style="List Bullet")
+                        p.add_run(f"{caso} - {texto}")
+
         if st.session_state.relatorio_geral_salvo:
             doc.add_paragraph()
             p = doc.add_paragraph()
