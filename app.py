@@ -201,69 +201,6 @@ st.session_state.dados_cabecalho = {
 # Biblioteca de perguntas (organizada por grupos)
 # ---------------------------------------------------------------------------
 perguntas = {
-    "Aspectos Físicos da Imagem": {
-        "Contraste adequado": {
-            "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
-            "sub_opcoes": {
-                "Contraste alto demais": "O contraste da imagem está alto demais.",
-                "Contraste baixo demais": "O contraste está baixo demais.",
-            },
-        },
-        "Definição de estruturas": {
-            "opcoes": {
-                "Sim": "As estruturas estão bem definidas na imagem.",
-                "Não": "As estruturas não estão bem definidas na imagem.",
-            },
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
-        },
-        "Saturação correta nas áreas claras": {
-            "opcoes": {
-                "Sim": "A imagem está bem saturada nas áreas claras.",
-                "Não": "A imagem não está bem saturada nas áreas claras.",
-            },
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
-        },
-        "Saturação correta nas áreas escuras": {
-            "opcoes": {
-                "Sim": "A imagem está bem saturada nas áreas escuras.",
-                "Não": "A imagem não está bem saturada nas áreas escuras.",
-            },
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
-        },
-        "Imagem sem ruído": {
-            "opcoes": {"Sim": "A imagem está sem ruído.", "Não": "A imagem está com ruído."},
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
-        },
-        "A área de fundo está adequadamente escura (enegrecimento película)": {
-            "opcoes": {
-                "Sim": "A área de fundo da imagem está adequadamente escura.",
-                "Não": "A área de fundo da imagem não está adequadamente escura.",
-            },
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema genérico B": "Frase gerada para o problema B.",
-            },
-        },
-        "Imagem sem artefatos (se houver, descrever)": {
-            "opcoes": {"Sim": "A imagem não possui artefatos.", "Não": "A imagem possui artefatos."},
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
-        },
-    },
     "Avaliação dos Critérios de Laudos": {
         "Resumo da história presente": {
             "opcoes": {"Sim": "O resumo da história presente está adequado.", "Não": "O resumo da história presente não está adequado."},
@@ -311,17 +248,15 @@ caso_atual = st.selectbox("Escolha o Caso que vai analisar agora:", [1, 2, 3, 4,
 nome_caso = f"Caso {caso_atual}"
 
 respostas_temporarias = []
-abas_grupos = st.tabs(list(perguntas.keys()))
-for idx, (nome_grupo, questoes) in enumerate(perguntas.items()):
-    with abas_grupos[idx]:
-        for titulo, info in questoes.items():
-            st.subheader(titulo)
-            escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
-            sub_escolha = None
-            if "sub_opcoes" in info and escolha == "Não":
-                sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
-            obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
-            respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
+st.header("Avaliação dos Critérios de Laudos")
+for titulo, info in perguntas["Avaliação dos Critérios de Laudos"].items():
+    st.subheader(titulo)
+    escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
+    sub_escolha = None
+    if "sub_opcoes" in info and escolha == "Não":
+        sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
+    obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
+    respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
 st.markdown("---")
 id_exame = st.text_input(
