@@ -214,7 +214,7 @@ perguntas = {
             "opcoes": {"Sim": " ", "Não": "O exame não foi classificado corretamente."},
         },
         "Recomendação correta segundo o BI-RADS": {
-            "opcoes": {"Sim": "Recomenda corretamente o exame segundo o BI-RADS.", "Não": "No laudo deste exame não consta a recomendação de conduta em relação ao achado radiográfico reportado."},            
+            "opcoes": {"Sim": "Recomenda corretamente o exame segundo o BI-RADS.", "Não": "No laudo deste exame não consta a recomendação de conduta em relação ao achado radiográfico reportado."},
         },
         "Interpretou corretamente todos os achados do exame": {
             "opcoes": {"Sim": "Interpretou corretamente todos os achados do exame.", "Não": "Não interpretou corretamente todos os achados do exame."},
@@ -540,6 +540,14 @@ if st.session_state.relatorios_ia:
                 doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_caso[nome_caso]))
             doc.add_paragraph("-" * 30)
 
+        if st.session_state.relatorio_geral_salvo:
+            doc.add_paragraph()
+            p = doc.add_paragraph()
+            p.add_run("Todos os casos:").bold = True
+            for linha in st.session_state.relatorio_geral_salvo.strip().split("\n"):
+                if linha.strip():
+                    doc.add_paragraph(limpar_formatacao(linha))
+
         # Recomendações
         recomendacoes = {
             "Recomendação correta segundo o BI-RADS": {
@@ -556,32 +564,26 @@ if st.session_state.relatorios_ia:
                     "f) classificação BI-RADS®; "
                     "g) recomendação de conduta; e "
                     "h) nome e assinatura do médico interpretador do exame.\"",
-                "Problema A": "Recomendação específica para o Problema A.",
-                "Problema B": "Recomendação específica para o Problema B.",
             },
         }
-        tem_recomendacao = any(
-            st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não"
-            for caso in casos_ord
-            for pergunta in recomendacoes
-        )
-        if tem_recomendacao:
-            doc.add_heading("Recomendações", level=0)
-            for caso in casos_ord:
-                for pergunta, textos in recomendacoes.items():
-                    if st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não":
-                        sub = st.session_state.sub_escolhas_casos.get(caso, {}).get(pergunta, "")
-                        texto = textos.get(sub, textos["default"])
-                        p = doc.add_paragraph(style="List Bullet")
-                        p.add_run(f"{caso} - {texto}")
-
-        if st.session_state.relatorio_geral_salvo:
-            doc.add_paragraph()
-            p = doc.add_paragraph()
-            p.add_run("Todos os casos:").bold = True
-            for linha in st.session_state.relatorio_geral_salvo.strip().split("\n"):
-                if linha.strip():
-                    doc.add_paragraph(limpar_formatacao(linha))
+        textos_inseridos = set()
+        for pergunta, textos in recomendacoes.items():
+            if any(
+                st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não"
+                for caso in casos_ord
+            ):
+                sub = None
+                for caso in casos_ord:
+                    sub = st.session_state.sub_escolhas_casos.get(caso, {}).get(pergunta, "")
+                    if sub:
+                        break
+                texto = textos.get(sub, textos["default"])
+                if texto not in textos_inseridos:
+                    if not textos_inseridos:
+                        doc.add_heading("Recomendações", level=0)
+                    p = doc.add_paragraph(style="List Bullet")
+                    p.add_run(texto)
+                    textos_inseridos.add(texto)
 
         output = BytesIO()
         doc.save(output)
