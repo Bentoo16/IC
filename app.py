@@ -136,8 +136,6 @@ if "consideracoes_gerais" not in st.session_state:
     st.session_state.consideracoes_gerais = ""
 if "escolhas_casos" not in st.session_state:
     st.session_state.escolhas_casos = {}
-if "sub_escolhas_casos" not in st.session_state:
-    st.session_state.sub_escolhas_casos = {}
 if "identificacao_exames" not in st.session_state:
     st.session_state.identificacao_exames = {}
 
@@ -203,6 +201,69 @@ st.session_state.dados_cabecalho = {
 # Biblioteca de perguntas (organizada por grupos)
 # ---------------------------------------------------------------------------
 perguntas = {
+    "Aspectos Físicos da Imagem": {
+        "Contraste adequado": {
+            "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
+            "sub_opcoes": {
+                "Contraste alto demais": "O contraste da imagem está alto demais.",
+                "Contraste baixo demais": "O contraste está baixo demais.",
+            },
+        },
+        "Definição de estruturas": {
+            "opcoes": {
+                "Sim": "As estruturas estão bem definidas na imagem.",
+                "Não": "As estruturas não estão bem definidas na imagem.",
+            },
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
+        },
+        "Saturação correta nas áreas claras": {
+            "opcoes": {
+                "Sim": "A imagem está bem saturada nas áreas claras.",
+                "Não": "A imagem não está bem saturada nas áreas claras.",
+            },
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
+        },
+        "Saturação correta nas áreas escuras": {
+            "opcoes": {
+                "Sim": "A imagem está bem saturada nas áreas escuras.",
+                "Não": "A imagem não está bem saturada nas áreas escuras.",
+            },
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
+        },
+        "Imagem sem ruído": {
+            "opcoes": {"Sim": "A imagem está sem ruído.", "Não": "A imagem está com ruído."},
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
+        },
+        "A área de fundo está adequadamente escura (enegrecimento película)": {
+            "opcoes": {
+                "Sim": "A área de fundo da imagem está adequadamente escura.",
+                "Não": "A área de fundo da imagem não está adequadamente escura.",
+            },
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
+        },
+        "Imagem sem artefatos (se houver, descrever)": {
+            "opcoes": {"Sim": "A imagem não possui artefatos.", "Não": "A imagem possui artefatos."},
+            "sub_opcoes": {
+                "Problema A": "Frase gerada para o problema A.",
+                "Problema B": "Frase gerada para o problema B.",
+            },
+        },
+    },
     "Avaliação dos Critérios de Laudos": {
         "Resumo da história presente": {
             "opcoes": {"Sim": " ", "Não": "É importante que nos laudos conste a indicação do exame. Essa indicação deve conter uma história resumida da paciente (exame de rastreamento x diagnóstico / história familiar / antecedentes cirúrgicos e resultados de biópsias / sintomas e queixas da paciente ... )."},
@@ -230,15 +291,17 @@ caso_atual = st.selectbox("Escolha o Caso que vai analisar agora:", [1, 2, 3, 4,
 nome_caso = f"Caso {caso_atual}"
 
 respostas_temporarias = []
-st.header("Avaliação dos Critérios de Laudos")
-for titulo, info in perguntas["Avaliação dos Critérios de Laudos"].items():
-    st.subheader(titulo)
-    escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
-    sub_escolha = None
-    if "sub_opcoes" in info and escolha == "Não":
-        sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
-    obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
-    respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
+abas_grupos = st.tabs(list(perguntas.keys()))
+for idx, (nome_grupo, questoes) in enumerate(perguntas.items()):
+    with abas_grupos[idx]:
+        for titulo, info in questoes.items():
+            st.subheader(titulo)
+            escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
+            sub_escolha = None
+            if "sub_opcoes" in info and escolha == "Não":
+                sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
+            obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
+            respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
 st.markdown("---")
 id_exame = st.text_input(
@@ -253,7 +316,6 @@ consideracoes_caso = st.text_area(
     height=100,
 )
 
-nome_caso = f"Caso {caso_atual}"
 caso_ja_existe = nome_caso in st.session_state.casos_salvos
 confirmacao = True
 if caso_ja_existe:
@@ -285,7 +347,6 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
             texto_para_ia += f"\n\n{consideracoes_caso}"
 
         escolhas = {item["titulo"]: item["escolha"] for item in respostas_temporarias}
-        sub_escolhas = {item["titulo"]: item["sub_escolha"] for item in respostas_temporarias if item["sub_escolha"]}
 
         with st.spinner("IA está formatando o relatório..."):
             try:
@@ -299,8 +360,8 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
                 st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
                 st.session_state.identificacao_exames[nome_caso] = id_exame
                 st.session_state.escolhas_casos[nome_caso] = escolhas
-                st.session_state.sub_escolhas_casos[nome_caso] = sub_escolhas
                 st.session_state.relatorios_ia[nome_caso] = response.text
+                st.session_state.docx_bytes = None
 
                 st.success(f"{nome_caso} processado com sucesso!")
                 st.rerun()
@@ -358,6 +419,7 @@ if len(st.session_state.casos_salvos) >= 2:
         try:
             response_geral = model.generate_content(prompt_geral)
             st.session_state.relatorio_geral_salvo = response_geral.text
+            st.session_state.docx_bytes = None
             st.success("Relatório geral gerado!")
             st.rerun()
         except Exception as e:
@@ -540,6 +602,35 @@ if st.session_state.relatorios_ia:
                 doc.add_paragraph(limpar_formatacao(st.session_state.consideracoes_caso[nome_caso]))
             doc.add_paragraph("-" * 30)
 
+        # Recomendações
+        recomendacoes = {
+            "Recomendação correta segundo o BI-RADS":
+                "Para cada classificação é importante descrever a recomendação apropriada, "
+                "segundo a quinta edição do BI-RADS®, conforme determina a Portaria de Consolidação "
+                "nº 5 GM/MS de 28/09/2017, que no seu anexo XXVIII, estabelece: "
+                "\"o laudo radiográfico deve conter as seguintes informações: "
+                "a) identificação do serviço, da idade do examinado e data do exame; "
+                "b) se exame de rastreamento ou de diagnóstico; "
+                "c) número de filmes ou imagens; "
+                "d) padrão mamário; "
+                "e) achados radiográficos; "
+                "f) classificação BI-RADS®; "
+                "g) recomendação de conduta; e "
+                "h) nome e assinatura do médico interpretador do exame.\"",
+        }
+        tem_recomendacao = any(
+            st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não"
+            for caso in casos_ord
+            for pergunta in recomendacoes
+        )
+        if tem_recomendacao:
+            doc.add_heading("Recomendações", level=0)
+            for caso in casos_ord:
+                for pergunta, texto in recomendacoes.items():
+                    if st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não":
+                        p = doc.add_paragraph(style="List Bullet")
+                        p.add_run(f"{caso} - {texto}")
+
         if st.session_state.relatorio_geral_salvo:
             doc.add_paragraph()
             p = doc.add_paragraph()
@@ -548,55 +639,24 @@ if st.session_state.relatorios_ia:
                 if linha.strip():
                     doc.add_paragraph(limpar_formatacao(linha))
 
-        # Recomendações
-        recomendacoes = {
-            "Recomendação correta segundo o BI-RADS": {
-                "default":
-                    "Para cada classificação é importante descrever a recomendação apropriada, "
-                    "segundo a quinta edição do BI-RADS®, conforme determina a Portaria de Consolidação "
-                    "nº 5 GM/MS de 28/09/2017, que no seu anexo XXVIII, estabelece: "
-                    "\"o laudo radiográfico deve conter as seguintes informações: "
-                    "a) identificação do serviço, da idade do examinado e data do exame; "
-                    "b) se exame de rastreamento ou de diagnóstico; "
-                    "c) número de filmes ou imagens; "
-                    "d) padrão mamário; "
-                    "e) achados radiográficos; "
-                    "f) classificação BI-RADS®; "
-                    "g) recomendação de conduta; e "
-                    "h) nome e assinatura do médico interpretador do exame.\"",
-            },
-        }
-        textos_inseridos = set()
-        for pergunta, textos in recomendacoes.items():
-            if any(
-                st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não"
-                for caso in casos_ord
-            ):
-                sub = None
-                for caso in casos_ord:
-                    sub = st.session_state.sub_escolhas_casos.get(caso, {}).get(pergunta, "")
-                    if sub:
-                        break
-                texto = textos.get(sub, textos["default"])
-                if texto not in textos_inseridos:
-                    if not textos_inseridos:
-                        doc.add_heading("Recomendações", level=0)
-                    p = doc.add_paragraph(style="List Bullet")
-                    p.add_run(texto)
-                    textos_inseridos.add(texto)
-
         output = BytesIO()
         doc.save(output)
         output.seek(0)
         return output
 
-    st.download_button(
-        label="Baixar Documento Final (.docx)",
-        data=criar_docx_limpo(),
-        file_name="relatorio_final.docx",
-        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        use_container_width=True,
-    )
+    if st.button("Gerar Documento Word", use_container_width=True):
+        with st.spinner("Montando o documento..."):
+            st.session_state.docx_bytes = criar_docx_limpo().getvalue()
+        st.success("Documento gerado! Use o botão abaixo para baixar.")
+
+    if st.session_state.get("docx_bytes"):
+        st.download_button(
+            label="Baixar Documento Final (.docx)",
+            data=st.session_state.docx_bytes,
+            file_name="relatorio_final.docx",
+            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            use_container_width=True,
+        )
 
 # ---------------------------------------------------------------------------
 # Botão de reset
@@ -610,9 +670,9 @@ if st.button("Limpar todos os dados da sessão"):
         "consideracoes_caso",
         "consideracoes_gerais",
         "escolhas_casos",
-        "sub_escolhas_casos",
         "dados_cabecalho",
         "identificacao_exames",
+        "docx_bytes",
     ]:
         if chave in st.session_state:
             del st.session_state[chave]
