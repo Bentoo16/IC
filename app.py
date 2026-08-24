@@ -724,23 +724,11 @@ if st.session_state.relatorios_ia:
             "Contraste adequado": {
                 # TODO: revisar/ajustar cada texto — estes são placeholders de base.
                 "Contraste alto":
-                    "Ajustar os parâmetros de operação da impressora de filmes reduzindo "
-                    "moderadamente o contraste, com vistas à otimização da qualidade das "
-                    "imagens em relação aos critérios apresentados e descritos no folder "
-                    "\u201cCritérios de Qualidade da Imagem em Mamografia\u201d, enviado em anexo. "
-                    "[TODO: completar texto específico para 'Contraste alto']",
+                    "As imagens estão com o contraste aumentado devido à acentuada diferença entre os tons de cinza claros e escuros presentes. Para que o contraste das imagens seja considerado adequado, essa diferença deve ser menos acentuada.",
                 "Contraste muito alto":
-                    "Ajustar imediatamente os parâmetros de operação da impressora de filmes, "
-                    "dado que o contraste excessivo compromete a interpretação diagnóstica das "
-                    "imagens, conforme os critérios descritos no folder \u201cCritérios de Qualidade "
-                    "da Imagem em Mamografia\u201d, enviado em anexo. "
-                    "[TODO: completar texto específico para 'Contraste muito alto']",
+                    "As imagens deste exame estão com o contraste muito alto e com as regiões correspondentes a tecidos mamários mais densos com os tons de cinza claro saturados (muito claros, quase transparentes), o mesmo ocorrendo nas regiões das axilas nas incidências mediolaterais oblíquas (MLO). Este aspecto das imagens dificulta ou mesmo inviabiliza a identificação de microcalcificações nas regiões de tecidos densos. Portanto, as imagens impressas enviadas para avaliação foram consideradas sem qualidade técnica para a interpretação diagnóstica.",
                 "Contraste baixo":
-                    "Ajustar os parâmetros de operação da impressora de filmes aumentando o "
-                    "contraste, com vistas à otimização da qualidade das imagens em relação aos "
-                    "critérios apresentados e descritos no folder \u201cCritérios de Qualidade da "
-                    "Imagem em Mamografia\u201d, enviado em anexo. "
-                    "[TODO: completar texto específico para 'Contraste baixo']",
+                    "As imagens das quatro incidências estão muito claras e, por conseguinte, com o contraste reduzido devido à pouca diferença entre os tons de cinza claros (regiões de tecido fibroglandular) e de cinza escuros (regiões de tecido subcutâneo e tecido adiposo retromamário) presentes. Para que o contraste das imagens seja considerado adequado, essa diferença deve ser mais acentuada.",
             },
             "Definição de estruturas":{
                 "_default":
