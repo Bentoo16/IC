@@ -76,9 +76,10 @@ def gerar_tabela_html(casos_ordenados, perguntas_ordenadas, escolhas_casos):
         html += "<tr>"
         html += f"<td>{pergunta}</td>"
         for caso in casos_ordenados:
-            escolha = escolhas_casos.get(caso, {}).get(pergunta, "-")
-            sim_cell = "X" if escolha == "Sim" else ""
-            nao_cell = "X" if escolha == "Não" else ""
+            item = escolhas_casos.get(caso, {}).get(pergunta, {})
+            resposta = item.get("resposta", "-") if isinstance(item, dict) else item
+            sim_cell = "X" if resposta == "Sim" else ""
+            nao_cell = "X" if resposta == "Não" else ""
             html += f"<td>{sim_cell}</td><td>{nao_cell}</td>"
         html += "</tr>"
     html += "</table>"
@@ -205,8 +206,27 @@ perguntas = {
         "Contraste adequado": {
             "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
             "sub_opcoes": {
-                "Contraste alto demais": "O contraste da imagem está alto demais.",
-                "Contraste baixo demais": "O contraste está baixo demais.",
+                "Contraste alto": (
+                    "As imagens estão com o contraste aumentado devido à acentuada diferença "
+                    "entre os tons de cinza claros e escuros presentes. Para que o contraste "
+                    "das imagens seja considerado adequado, essa diferença deve ser menos acentuada."
+                ),
+                "Contraste muito alto": (
+                    "As imagens deste exame estão com o contraste muito alto e com as regiões "
+                    "correspondentes a tecidos mamários mais densos com os tons de cinza claro "
+                    "saturados (muito claros, quase transparentes), o mesmo ocorrendo nas regiões "
+                    "das axilas nas incidências mediolaterais oblíquas (MLO). Este aspecto das "
+                    "imagens dificulta ou mesmo inviabiliza a identificação de microcalcificações "
+                    "nas regiões de tecidos densos. Portanto, as imagens impressas enviadas para "
+                    "avaliação foram consideradas sem qualidade técnica para a interpretação diagnóstica."
+                ),
+                "Contraste baixo": (
+                    "As imagens das quatro incidências estão muito claras e, por conseguinte, com "
+                    "o contraste reduzido devido à pouca diferença entre os tons de cinza claros "
+                    "(regiões de tecido fibroglandular) e de cinza escuros (regiões de tecido "
+                    "subcutâneo e tecido adiposo retromamário) presentes. Para que o contraste das "
+                    "imagens seja considerado adequado, essa diferença deve ser mais acentuada."
+                ),
             },
         },
         "Definição de estruturas": {
@@ -258,6 +278,7 @@ perguntas = {
         },
         "Imagem sem artefatos (se houver, descrever)": {
             "opcoes": {"Sim": "A imagem não possui artefatos.", "Não": "A imagem possui artefatos."},
+            "gatilho_sub_opcoes": "Sim",
             "sub_opcoes": {
                 "Problema A": "Frase gerada para o problema A.",
                 "Problema B": "Frase gerada para o problema B.",
@@ -297,8 +318,9 @@ for idx, (nome_grupo, questoes) in enumerate(perguntas.items()):
         for titulo, info in questoes.items():
             st.subheader(titulo)
             escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
+            gatilho = info.get("gatilho_sub_opcoes", "Não")
             sub_escolha = None
-            if "sub_opcoes" in info and escolha == "Não":
+            if "sub_opcoes" in info and escolha == gatilho:
                 sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
             obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
             respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
@@ -333,7 +355,8 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
                 if item["titulo"] in questoes:
                     info_pergunta = questoes[item["titulo"]]
                     break
-            if item["escolha"] == "Não" and item["sub_escolha"]:
+            gatilho_pergunta = info_pergunta.get("gatilho_sub_opcoes", "Não")
+            if item["escolha"] == gatilho_pergunta and item["sub_escolha"]:
                 frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
             else:
                 frase_base = info_pergunta["opcoes"][item["escolha"]]
@@ -346,7 +369,13 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
         if consideracoes_caso.strip():
             texto_para_ia += f"\n\n{consideracoes_caso}"
 
-        escolhas = {item["titulo"]: item["escolha"] for item in respostas_temporarias}
+        escolhas = {
+            item["titulo"]: {
+                "resposta": item["escolha"],
+                "sub_opcao": item["sub_escolha"],
+            }
+            for item in respostas_temporarias
+        }
 
         with st.spinner("IA está formatando o relatório..."):
             try:
@@ -556,11 +585,12 @@ if st.session_state.relatorios_ia:
                 linha_atual = i + 2
                 tabela.cell(linha_atual, 0).text = pergunta
                 for j, caso in enumerate(casos_ord):
-                    escolha = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "-")
+                    item = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, {})
+                    resposta = item.get("resposta", "-") if isinstance(item, dict) else item
                     col_sim = 1 + j * 2
                     col_nao = col_sim + 1
-                    tabela.cell(linha_atual, col_sim).text = "X" if escolha == "Sim" else ""
-                    tabela.cell(linha_atual, col_nao).text = "X" if escolha == "Não" else ""
+                    tabela.cell(linha_atual, col_sim).text = "X" if resposta == "Sim" else ""
+                    tabela.cell(linha_atual, col_nao).text = "X" if resposta == "Não" else ""
 
             doc.add_paragraph()
 
@@ -603,33 +633,80 @@ if st.session_state.relatorios_ia:
             doc.add_paragraph("-" * 30)
 
         # Recomendações
+        # Estrutura: {pergunta: {sub_opcao: texto}}.
+        # Perguntas sem sub_opcoes usam a chave "_default".
+        # Perguntas com sub_opcoes podem ter um texto por sub-opção; se uma
+        # sub-opção não tiver entrada própria, cai no "_default" da pergunta
+        # (se existir) — assim dá pra ir preenchendo aos poucos.
         recomendacoes = {
-            "Recomendação correta segundo o BI-RADS":
-                "Para cada classificação é importante descrever a recomendação apropriada, "
-                "segundo a quinta edição do BI-RADS®, conforme determina a Portaria de Consolidação "
-                "nº 5 GM/MS de 28/09/2017, que no seu anexo XXVIII, estabelece: "
-                "\"o laudo radiográfico deve conter as seguintes informações: "
-                "a) identificação do serviço, da idade do examinado e data do exame; "
-                "b) se exame de rastreamento ou de diagnóstico; "
-                "c) número de filmes ou imagens; "
-                "d) padrão mamário; "
-                "e) achados radiográficos; "
-                "f) classificação BI-RADS®; "
-                "g) recomendação de conduta; e "
-                "h) nome e assinatura do médico interpretador do exame.\"",
+            "Recomendação correta segundo o BI-RADS": {
+                "_default":
+                    "Para cada classificação é importante descrever a recomendação apropriada, "
+                    "segundo a quinta edição do BI-RADS®, conforme determina a Portaria de Consolidação "
+                    "nº 5 GM/MS de 28/09/2017, que no seu anexo XXVIII, estabelece: "
+                    "\"o laudo radiográfico deve conter as seguintes informações: "
+                    "a) identificação do serviço, da idade do examinado e data do exame; "
+                    "b) se exame de rastreamento ou de diagnóstico; "
+                    "c) número de filmes ou imagens; "
+                    "d) padrão mamário; "
+                    "e) achados radiográficos; "
+                    "f) classificação BI-RADS®; "
+                    "g) recomendação de conduta; e "
+                    "h) nome e assinatura do médico interpretador do exame.\"",
+            },
+            "Contraste adequado": {
+                # TODO: revisar/ajustar cada texto — estes são placeholders de base.
+                "Contraste alto":
+                    "Ajustar os parâmetros de operação da impressora de filmes reduzindo "
+                    "moderadamente o contraste, com vistas à otimização da qualidade das "
+                    "imagens em relação aos critérios apresentados e descritos no folder "
+                    "\u201cCritérios de Qualidade da Imagem em Mamografia\u201d, enviado em anexo. "
+                    "[TODO: completar texto específico para 'Contraste alto']",
+                "Contraste muito alto":
+                    "Ajustar imediatamente os parâmetros de operação da impressora de filmes, "
+                    "dado que o contraste excessivo compromete a interpretação diagnóstica das "
+                    "imagens, conforme os critérios descritos no folder \u201cCritérios de Qualidade "
+                    "da Imagem em Mamografia\u201d, enviado em anexo. "
+                    "[TODO: completar texto específico para 'Contraste muito alto']",
+                "Contraste baixo":
+                    "Ajustar os parâmetros de operação da impressora de filmes aumentando o "
+                    "contraste, com vistas à otimização da qualidade das imagens em relação aos "
+                    "critérios apresentados e descritos no folder \u201cCritérios de Qualidade da "
+                    "Imagem em Mamografia\u201d, enviado em anexo. "
+                    "[TODO: completar texto específico para 'Contraste baixo']",
+            },
         }
+
+        def resposta_do_caso(caso, pergunta):
+            item = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, {})
+            return item.get("resposta", "") if isinstance(item, dict) else item
+
+        def sub_opcao_do_caso(caso, pergunta):
+            item = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, {})
+            return item.get("sub_opcao") if isinstance(item, dict) else None
+
+        def obter_gatilho(pergunta):
+            # Busca o gatilho configurado em `perguntas` (padrão: "Não").
+            for questoes in perguntas.values():
+                if pergunta in questoes:
+                    return questoes[pergunta].get("gatilho_sub_opcoes", "Não")
+            return "Não"
+
         tem_recomendacao = any(
-            st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não"
+            resposta_do_caso(caso, pergunta) == obter_gatilho(pergunta)
             for caso in casos_ord
             for pergunta in recomendacoes
         )
         if tem_recomendacao:
             doc.add_heading("Recomendações", level=0)
             for caso in casos_ord:
-                for pergunta, texto in recomendacoes.items():
-                    if st.session_state.escolhas_casos.get(caso, {}).get(pergunta, "") == "Não":
-                        p = doc.add_paragraph(style="List Bullet")
-                        p.add_run(f"{caso} - {texto}")
+                for pergunta, textos_por_sub in recomendacoes.items():
+                    if resposta_do_caso(caso, pergunta) == obter_gatilho(pergunta):
+                        sub = sub_opcao_do_caso(caso, pergunta)
+                        texto = textos_por_sub.get(sub) or textos_por_sub.get("_default")
+                        if texto:
+                            p = doc.add_paragraph(style="List Bullet")
+                            p.add_run(f"{caso} - {texto}")
 
         if st.session_state.relatorio_geral_salvo:
             doc.add_paragraph()
