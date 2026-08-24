@@ -202,9 +202,106 @@ st.session_state.dados_cabecalho = {
 # Biblioteca de perguntas (organizada por grupos)
 # ---------------------------------------------------------------------------
 perguntas = {
+    "Avaliação dos Critérios de Posicionamento": {
+        "Identificação correta do exame": {
+            "opcoes": {
+                "Sim": "",
+                "Não": "A identificação das imagens enviadas para avaliação não está correta porque há texto impresso sobre áreas das mamas."
+            },
+        },
+        "Adequada compressão de mama": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": "As imagens da mama deste caso estão com acentuada perda de definição das estruturas anatômicas (imagens tremidas) possivelmente causada pela pouca compressão da mama ou por movimentação da paciente durante a aquisição das imagens. "
+            },
+        },
+        "Mamilo paralelo ao filme": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": "Adicionalmente, nestas incidências, os mamilos não estão perfilados paralelos ao filme. "
+            },
+        },
+        "Visibilização completa do parênquima mamário": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": "Este mal posicionamento das mamas da paciente nas incidências não fornece uma visibilização completa do parênquima mamário, podendo prejudicar o diagnóstico de lesões em tecidos mamários de interesse. "
+            },
+        },
+        "Músculo grande peitoral na altura do mamilo ou abaixo - na 0ML": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem o músculo grande peitoral na altura do mamilo ou abaixo e as mamas para as incidências craniocaudais (CC) não estão bem posicionadas. Este mal posicionamento das mamas da paciente pode prejudicar o diagnóstico devido à visibilização incompleta de tecidos mamários de interesse. "
+            },
+        },
+        "Prega inframamária incluída na radiografia - na 0ML": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": "As imagens das incidências mediolaterais oblíquas (MLO) não incluem a prega inframamária. Por isso as imagens das incidências MLO não mostram a visibilização completa do mamário."
+            },
+        },
+    },
+    "Avaliação dos Critérios Clínicos de Qualidade da Imagem": {
+        "Visibilização adequada da pele (ausência na convencional ou presença na digital)":{
+            "opcoes": {
+                "Sim": " ",
+                "Não": " "
+            },
+            "sub_opcoes": {
+                "Dobra de pele junto a parede toráxica e papila não perfilada": "Na parte inferior da imagem desta incidência da mama (MLO) se observa uma dobra de pele junto à parede torácica e na imagem da mama (MLO) a papila não está perfilada em relação ao detector de imagem.",
+                "Assimetria difusa da mama associada a espessamento da pele e do complexo areolopapilar.": "Neste caso, há assimetria difusa da mama associada a espessamento da pele e do complexo areolopapilar."
+            },
+        },
+        "Visibilização das estruturas vasculares através do parênquima denso": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": " "
+             },
+        },
+        "Visibilização dos ligamentos de Cooper": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": " "
+            },
+        },
+        "As microcalcificações representa lesão verdadeira? (se houver lesão)": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": " "
+            },
+        },
+        "A opacidade representa lesão verdadeira? (se houver lesão)": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": " "
+            },
+        },
+        "O tecido glandular está adequadamente claro": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": " "
+            },
+        },
+    },
+    "Avaliação dos Critérios de Laudos": {
+        "Resumo da história presente": {
+            "opcoes": {"Sim": " ", "Não": "É importante que nos laudos conste a indicação do exame. Essa indicação deve conter uma história resumida da paciente (exame de rastreamento x diagnóstico / história familiar / antecedentes cirúrgicos e resultados de biópsias / sintomas e queixas da paciente ... )."},
+        },
+        "Utiliza corretamente o Léxico BI-RADS ou SISMAMA": {
+            "opcoes": {"Sim": " ", "Não": "No laudo deste exame não foi utilizado corretamente o léxico do BI-RADS® ou do SISMAMA."},
+        },
+        "Classifica corretamente o exame segundo o BI-RADS": {
+            "opcoes": {"Sim": " ", "Não": "O exame não foi classificado corretamente."},
+        },
+        "Recomendação correta segundo o BI-RADS": {
+            "opcoes": {"Sim": "Recomenda corretamente o exame segundo o BI-RADS.", "Não": "No laudo deste exame não consta a recomendação de conduta em relação ao achado radiográfico reportado."},
+        },
+        "Interpretou corretamente todos os achados do exame": {
+            "opcoes": {"Sim": "Interpretou corretamente todos os achados do exame.", "Não": "Não interpretou corretamente todos os achados do exame."},
+        },
+    },
     "Aspectos Físicos da Imagem": {
         "Contraste adequado": {
-            "opcoes": {"Sim": "O contraste está adequado.", "Não": "O contraste não está adequado."},
+            "opcoes": {"Sim": " ", "Não": " "},
             "sub_opcoes": {
                 "Contraste alto": (
                     "As imagens estão com o contraste aumentado devido à acentuada diferença "
@@ -232,11 +329,7 @@ perguntas = {
         "Definição de estruturas": {
             "opcoes": {
                 "Sim": "As estruturas estão bem definidas na imagem.",
-                "Não": "As estruturas não estão bem definidas na imagem.",
-            },
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
+                "Não": "As imagens da mama deste caso estão com acentuada perda de definição das estruturas anatômicas (imagens tremidas) possivelmente causada pela pouca compressão da mama ou por movimentação da paciente durante a aquisição das imagens.",
             },
         },
         "Saturação correta nas áreas claras": {
@@ -244,19 +337,11 @@ perguntas = {
                 "Sim": "A imagem está bem saturada nas áreas claras.",
                 "Não": "A imagem não está bem saturada nas áreas claras.",
             },
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
         },
         "Saturação correta nas áreas escuras": {
             "opcoes": {
                 "Sim": "A imagem está bem saturada nas áreas escuras.",
                 "Não": "A imagem não está bem saturada nas áreas escuras.",
-            },
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
             },
         },
         "Imagem sem ruído": {
@@ -268,38 +353,18 @@ perguntas = {
         },
         "A área de fundo está adequadamente escura (enegrecimento película)": {
             "opcoes": {
-                "Sim": "A área de fundo da imagem está adequadamente escura.",
-                "Não": "A área de fundo da imagem não está adequadamente escura.",
-            },
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
+                "Sim": " ",
+                "Não": " ",
             },
         },
         "Imagem sem artefatos (se houver, descrever)": {
-            "opcoes": {"Sim": "A imagem não possui artefatos.", "Não": "A imagem possui artefatos."},
-            "gatilho_sub_opcoes": "Sim",
+            "opcoes": {"Sim": " ", "Não": " "},
+            #"gatilho_sub_opcoes": "Sim",
             "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
+                "Possui artefatos na forma de linhas finas gerados pelo movimento insuficiente da grade antidifusora do mamógrafo. ": "Adicionalmente, elas apresentam diversos artefatos na forma de finas linhas verticais de tons de cinza claro gerados pelo movimento insuficiente da grade antidifusora do mamógrafo. Estas linhas causam uma impressão de ruído (aspecto granulado) perceptível nas imagens das pacientes.",
+                "Possui artefatos decorrentes de desgastes e/ou danificadas. ": "As imagens enviadas para avaliação apresentam inúmeros artefatos de diversos tipos decorrentes das placas de imagem (IP) desgastadas e/ou danificadas.",
+                "Possui escala métrica sobre as imagens das mamas. ": "Por fim, as imagens da mama têm uma escala métrica impressa na lateral do filme próxima à parede torácica da paciente. Estas escalas métricas impressas sobre as imagens das mamas constituem artefatos que devem ser retirados. "
             },
-        },
-    },
-    "Avaliação dos Critérios de Laudos": {
-        "Resumo da história presente": {
-            "opcoes": {"Sim": " ", "Não": "É importante que nos laudos conste a indicação do exame. Essa indicação deve conter uma história resumida da paciente (exame de rastreamento x diagnóstico / história familiar / antecedentes cirúrgicos e resultados de biópsias / sintomas e queixas da paciente ... )."},
-        },
-        "Utiliza corretamente o Léxico BI-RADS ou SISMAMA": {
-            "opcoes": {"Sim": " ", "Não": "No laudo deste exame não foi utilizado corretamente o léxico do BI-RADS® ou do SISMAMA."},
-        },
-        "Classifica corretamente o exame segundo o BI-RADS": {
-            "opcoes": {"Sim": " ", "Não": "O exame não foi classificado corretamente."},
-        },
-        "Recomendação correta segundo o BI-RADS": {
-            "opcoes": {"Sim": "Recomenda corretamente o exame segundo o BI-RADS.", "Não": "No laudo deste exame não consta a recomendação de conduta em relação ao achado radiográfico reportado."},
-        },
-        "Interpretou corretamente todos os achados do exame": {
-            "opcoes": {"Sim": "Interpretou corretamente todos os achados do exame.", "Não": "Não interpretou corretamente todos os achados do exame."},
         },
     },
 }
@@ -319,9 +384,9 @@ for idx, (nome_grupo, questoes) in enumerate(perguntas.items()):
             st.subheader(titulo)
             escolha = st.radio("Selecione:", list(info["opcoes"].keys()), key=f"radio_{titulo}_c{caso_atual}", horizontal=True)
             gatilho = info.get("gatilho_sub_opcoes", "Não")
-            sub_escolha = None
+            sub_escolha = []
             if "sub_opcoes" in info and escolha == gatilho:
-                sub_escolha = st.radio("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
+                sub_escolha = st.multiselect("Especifique:", list(info["sub_opcoes"].keys()), key=f"sub_{titulo}_c{caso_atual}")
             obs = st.text_input("Considerações adicionais:", key=f"obs_{titulo}_c{caso_atual}", placeholder="Opcional")
             respostas_temporarias.append({"titulo": titulo, "escolha": escolha, "sub_escolha": sub_escolha, "obs": obs})
 
@@ -357,7 +422,9 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
                     break
             gatilho_pergunta = info_pergunta.get("gatilho_sub_opcoes", "Não")
             if item["escolha"] == gatilho_pergunta and item["sub_escolha"]:
-                frase_base = info_pergunta["sub_opcoes"][item["sub_escolha"]]
+                frase_base = " ".join(
+                    info_pergunta["sub_opcoes"][opcao] for opcao in item["sub_escolha"]
+                )
             else:
                 frase_base = info_pergunta["opcoes"][item["escolha"]]
             if item["obs"]:
@@ -675,6 +742,34 @@ if st.session_state.relatorios_ia:
                     "Imagem em Mamografia\u201d, enviado em anexo. "
                     "[TODO: completar texto específico para 'Contraste baixo']",
             },
+            "Definição de estruturas":{
+                "_default":
+                    "Com vistas a evitar a perda de definição das imagens (imagens tremidas), é recomendado aos profissionais que realizam os exames atenção à compressão correta das mamas e que sinalizem para as pacientes que não se movimentem e prendam a respiração durante a aquisição das imagens."
+            },
+            "Imagem sem artefatos (se houver, descrever)":{
+                "_default":
+                    "É recomendado ao pessoal de manutenção do mamógrafo ajustar o movimento da grade antidifusora de modo que as suas linhas de material radiopaco não sejam registradas nas imagens das pacientes, gerando artefatos. O movimento insuficiente da grade antidifusora do mamógrafo também está gerando um nível de ruído (aspecto granulado) perceptível nas imagens das pacientes. Ver no folder “Critérios de Qualidade da Imagem em Mamografia”, enviado em anexo, as descrições de ruído e artefatos de imagem."
+            },
+            "Identificação correta do exame":{
+                "_default":
+                    "É recomendado a(o)s técnica(o)s responsáveis pela impressão dos exames não sobrepor textos de identificação do serviço, da paciente e das técnicas radiográficas sobre áreas das imagens das mamas."
+            },
+            "Adequada compressão de mama":{
+                "_default":
+                    "Com vistas a evitar a perda de definição das imagens (imagens tremidas), é recomendado aos profissionais que realizam os exames atenção à compressão correta das mamas e que sinalizem para as pacientes que não se movimentem e prendam a respiração durante a aquisição das imagens."
+            },
+            "Visibilização completa do parênquima mamário":{
+                "_default":
+                    "Para o posicionamento adequado as papilas devem estar perfiladas e deve ser incluído todo o tecido fibroglandular nas duas incidências (CC e MLO). A incidência MLO deve conter as pregas inframamárias e o músculo peitoral deve estar na altura ou abaixo das papilas. A incidência CC deve apresentar as papilas equidistantes medial e lateralmente. Deve haver insinuação do músculo peitoral na região central e posterior das mamas na incidência CC e a diferença de parênquima aparente entre esta incidência e a incidência MLO deve ser de no máximo 1,0 cm."
+            },
+            "Músculo grande peitoral na altura do mamilo ou abaixo - na 0ML":{
+                "_default":
+                    "Melhorar a tração e a elevação das mamas nas incidências mediolaterais oblíquas (MLO) de modo a incluir nas imagens a prega inframamária e o músculo grande peitoral na altura ou abaixo da papila."
+            },
+            "Prega inframamária incluída na radiografia - na 0ML":{
+                "_default":
+                    "Melhorar a tração e a elevação das mamas nas incidências mediolaterais oblíquas (MLO) de modo a incluir nas imagens a prega inframamária e o músculo grande peitoral na altura ou abaixo da papila."
+            },
         }
 
         def resposta_do_caso(caso, pergunta):
@@ -703,12 +798,21 @@ if st.session_state.relatorios_ia:
             for caso in casos_ord:
                 for pergunta, textos_por_sub in recomendacoes.items():
                     if resposta_do_caso(caso, pergunta) == obter_gatilho(pergunta):
-                        sub = sub_opcao_do_caso(caso, pergunta)
-                        texto = textos_por_sub.get(sub) or textos_por_sub.get("_default")
-                        if texto and texto not in textos_inseridos:
-                            textos_inseridos.add(texto)
-                            p = doc.add_paragraph(style="List Bullet")
-                            p.add_run(texto)
+                        subs = sub_opcao_do_caso(caso, pergunta)
+                        if not subs:
+                            # Pergunta sem sub_opcoes (ou nenhuma sub-opção marcada): usa o texto padrão.
+                            textos = [textos_por_sub.get("_default")]
+                        else:
+                            # Uma ou mais sub-opções marcadas: junta o texto de cada uma.
+                            textos = [
+                                textos_por_sub.get(sub) or textos_por_sub.get("_default")
+                                for sub in subs
+                            ]
+                        for texto in textos:
+                            if texto and texto not in textos_inseridos:
+                                textos_inseridos.add(texto)
+                                p = doc.add_paragraph(style="List Bullet")
+                                p.add_run(texto)
 
         if st.session_state.relatorio_geral_salvo:
             doc.add_paragraph()
