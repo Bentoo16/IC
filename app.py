@@ -345,11 +345,7 @@ perguntas = {
             },
         },
         "Imagem sem ruído": {
-            "opcoes": {"Sim": "A imagem está sem ruído.", "Não": "A imagem está com ruído."},
-            "sub_opcoes": {
-                "Problema A": "Frase gerada para o problema A.",
-                "Problema B": "Frase gerada para o problema B.",
-            },
+            "opcoes": {"Sim": " ", "Não": " "},
         },
         "A área de fundo está adequadamente escura (enegrecimento película)": {
             "opcoes": {
