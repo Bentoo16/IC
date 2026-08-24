@@ -699,14 +699,16 @@ if st.session_state.relatorios_ia:
         )
         if tem_recomendacao:
             doc.add_heading("Recomendações", level=0)
+            textos_inseridos = set()
             for caso in casos_ord:
                 for pergunta, textos_por_sub in recomendacoes.items():
                     if resposta_do_caso(caso, pergunta) == obter_gatilho(pergunta):
                         sub = sub_opcao_do_caso(caso, pergunta)
                         texto = textos_por_sub.get(sub) or textos_por_sub.get("_default")
-                        if texto:
+                        if texto and texto not in textos_inseridos:
+                            textos_inseridos.add(texto)
                             p = doc.add_paragraph(style="List Bullet")
-                            p.add_run(f"{caso} - {texto}")
+                            p.add_run(texto)
 
         if st.session_state.relatorio_geral_salvo:
             doc.add_paragraph()
