@@ -347,7 +347,7 @@ perguntas = {
             },
         },
         "Imagem sem ruído": {
-            "opcoes": {"Sim": " ", "Não": " "},
+            "opcoes": {"Sim": " ", "Não": "As imagens enviadas para a avaliação do caso estão com um nível de ruído (aspecto granulado) moderado, porém perceptível a olho nu."},
         },
         "A área de fundo está adequadamente escura (enegrecimento película)": {
             "opcoes": {
@@ -805,6 +805,14 @@ if st.session_state.relatorios_ia:
             "Prega inframamária incluída na radiografia - na 0ML":{
                 "_default":
                     "Melhorar a tração e a elevação das mamas nas incidências mediolaterais oblíquas (MLO) de modo a incluir nas imagens a prega inframamária e o músculo grande peitoral na altura ou abaixo da papila."
+            },
+            "Imagem sem ruído":{
+                "_default":
+                    "É recomendado ao físico médico responsável pelo Serviço ajsutar os parâmetros de operação do mamógrafo (kV, mAs e combinação alvo-filtro) com vistas à otimização das técnicas radiográficas e à redução do ruído (aspecto granulado da imagem) observado nas imagens enviadas para avaliação. Ver no folder 'Critérios de Qualidade da Imagem em Mamografia', enviado em anexo, o conceito de 'Ruído da Imagem'."
+            },
+            "Área de fundo adequadamente escura (enegrecimento do filme)":{
+                "_default":
+                    "É recomendado ao pessoal de manutenção da impressora de filmes ou ao físico médico responsável pelo Serviço ajustar os parâmetros de operações da impressora no folder 'Critérios de Qualidade da Imagem em Mamografia', enviado em anexo. Atenção especial deve ser dada ao critério 'Área de fundo adequadamente escura (enegrecimento do filme)'"
             },
         }
 
