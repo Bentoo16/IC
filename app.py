@@ -310,7 +310,7 @@ perguntas = {
                     "entre os tons de cinza claros e escuros presentes. Para que o contraste "
                     "das imagens seja considerado adequado, essa diferença deve ser menos acentuada."
                 ),
-                "Contraste muito alto": (
+                "Contraste muito alto (onsiderado sem qualidade técnica)": (
                     "As imagens deste exame estão com o contraste muito alto e com as regiões "
                     "correspondentes a tecidos mamários mais densos com os tons de cinza claro "
                     "saturados (muito claros, quase transparentes), o mesmo ocorrendo nas regiões "
@@ -330,20 +330,20 @@ perguntas = {
         },
         "Definição de estruturas": {
             "opcoes": {
-                "Sim": "As estruturas estão bem definidas na imagem.",
+                "Sim": " ",
                 "Não": "As imagens da mama deste caso estão com acentuada perda de definição das estruturas anatômicas (imagens tremidas) possivelmente causada pela pouca compressão da mama ou por movimentação da paciente durante a aquisição das imagens.",
             },
         },
         "Saturação correta nas áreas claras": {
             "opcoes": {
-                "Sim": "A imagem está bem saturada nas áreas claras.",
-                "Não": "A imagem não está bem saturada nas áreas claras.",
+                "Sim": " ",
+                "Não": " ",
             },
         },
         "Saturação correta nas áreas escuras": {
             "opcoes": {
-                "Sim": "A imagem está bem saturada nas áreas escuras.",
-                "Não": "A imagem não está bem saturada nas áreas escuras.",
+                "Sim": " ",
+                "Não": " ",
             },
         },
         "Imagem sem ruído": {
