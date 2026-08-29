@@ -288,17 +288,17 @@ perguntas = {
         "Resumo da história presente": {
             "opcoes": {"Sim": " ", "Não": "É importante que nos laudos conste a indicação do exame. Essa indicação deve conter uma história resumida da paciente (exame de rastreamento x diagnóstico / história familiar / antecedentes cirúrgicos e resultados de biópsias / sintomas e queixas da paciente ... )."},
         },
-        "Utiliza corretamente o Léxico BI-RADS ou SISMAMA": {
+        "Utiliza corretamente o Léxico BI-RADS® ou SISMAMA": {
             "opcoes": {"Sim": " ", "Não": "No laudo deste exame não foi utilizado corretamente o léxico do BI-RADS® ou do SISMAMA."},
         },
-        "Classifica corretamente o exame segundo o BI-RADS": {
+        "Classifica corretamente o exame segundo o BI-RADS®": {
             "opcoes": {"Sim": " ", "Não": "O exame não foi classificado corretamente."},
         },
-        "Recomendação correta segundo o BI-RADS": {
-            "opcoes": {"Sim": "Recomenda corretamente o exame segundo o BI-RADS.", "Não": "No laudo deste exame não consta a recomendação de conduta em relação ao achado radiográfico reportado."},
+        "Recomendação correta segundo o BI-RADS®": {
+            "opcoes": {"Sim": "Recomenda corretamente o exame segundo o BI-RADS®.", "Não": " No laudo enviado para avaliação, o exame não foi classificado corretamente, a recomendação de conduta não está correta segundo o BI-RADS®."},
         },
         "Interpretou corretamente todos os achados do exame": {
-            "opcoes": {"Sim": "Interpretou corretamente todos os achados do exame.", "Não": "Não interpretou corretamente todos os achados do exame."},
+            "opcoes": {"Sim": "", "Não": " Todos os achados do exame não foram interpretados corretamente."},
         },
     },
     "Aspectos Físicos da Imagem": {
@@ -374,8 +374,8 @@ perguntas = {
 perguntas_adicionais_texto = [
     "Padrão de Mama segundo o serviço: (MARCAR: A, B, C ou D)",
     "Tipo de achado segundo o serviço: (MARCAR: MCF, CALC, NOD, DISTORC, ASSIM, etc)",
-    "Classificação BI-RADS do serviço: (MARCAR: 0, 1, 2, 3, 4, 5, 6)",
-    "Classificação BI-RADS dos avaliadores: (MARCAR: 0, 1, 2, 3, 4, 5, 6)",
+    "Classificação BI-RADS® do serviço: (MARCAR: 0, 1, 2, 3, 4, 5, 6)",
+    "Classificação BI-RADS® dos avaliadores: (MARCAR: 0, 1, 2, 3, 4, 5, 6)",
 ]
 
 # ---------------------------------------------------------------------------
@@ -754,7 +754,7 @@ if st.session_state.relatorios_ia:
         # sub-opção não tiver entrada própria, cai no "_default" da pergunta
         # (se existir) — assim dá pra ir preenchendo aos poucos.
         recomendacoes = {
-            "Recomendação correta segundo o BI-RADS": {
+            "Recomendação correta segundo o BI-RADS®": {
                 "_default":
                     "Para cada classificação é importante descrever a recomendação apropriada, "
                     "segundo a quinta edição do BI-RADS®, conforme determina a Portaria de Consolidação "
