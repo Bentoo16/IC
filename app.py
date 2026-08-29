@@ -139,6 +139,8 @@ if "escolhas_casos" not in st.session_state:
     st.session_state.escolhas_casos = {}
 if "identificacao_exames" not in st.session_state:
     st.session_state.identificacao_exames = {}
+if "dados_adicionais_casos" not in st.session_state:
+    st.session_state.dados_adicionais_casos = {}
 
 # ---------------------------------------------------------------------------
 # Barra de progresso da sessão
@@ -366,11 +368,34 @@ perguntas = {
 }
 
 # ---------------------------------------------------------------------------
+# Perguntas adicionais (texto livre) - não entram no texto enviado à IA,
+# servem apenas para compor uma tabela própria no documento .docx.
+# ---------------------------------------------------------------------------
+perguntas_adicionais_texto = [
+    "Padrão de Mama segundo o serviço",
+    "Tipo de achado segundo o serviço",
+    "Classificação BI-RADS do serviço",
+    "Classificação BI-RADS dos avaliadores",
+]
+
+# ---------------------------------------------------------------------------
 # Seleção do caso e perguntas
 # ---------------------------------------------------------------------------
 st.markdown("---")
 caso_atual = st.selectbox("Escolha o Caso que vai analisar agora:", [1, 2, 3, 4, 5])
 nome_caso = f"Caso {caso_atual}"
+
+st.markdown("---")
+st.subheader("Dados Adicionais do Caso")
+st.caption("Estes campos não entram no texto enviado à IA — aparecem apenas em uma tabela própria no documento final.")
+valores_adicionais_salvos = st.session_state.dados_adicionais_casos.get(nome_caso, {})
+dados_adicionais_temp = {}
+for pergunta_extra in perguntas_adicionais_texto:
+    dados_adicionais_temp[pergunta_extra] = st.text_input(
+        pergunta_extra,
+        value=valores_adicionais_salvos.get(pergunta_extra, ""),
+        key=f"extra_{pergunta_extra}_c{caso_atual}",
+    )
 
 respostas_temporarias = []
 abas_grupos = st.tabs(list(perguntas.keys()))
@@ -439,6 +464,8 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
             }
             for item in respostas_temporarias
         }
+
+        st.session_state.dados_adicionais_casos[nome_caso] = dict(dados_adicionais_temp)
 
         with st.spinner("IA está formatando o relatório..."):
             try:
@@ -562,6 +589,14 @@ if st.session_state.relatorios_ia:
             id_texto = st.session_state.identificacao_exames.get(caso, "")
             id_tabela += f"| {caso} | {id_texto} |\n"
         st.markdown(id_tabela)
+
+        st.markdown("**Dados Adicionais dos Casos**")
+        adicional_tabela = "| Pergunta | " + " | ".join(casos_ordenados) + " |\n"
+        adicional_tabela += "| --- | " + " | ".join(["---"] * len(casos_ordenados)) + " |\n"
+        for pergunta_extra in perguntas_adicionais_texto:
+            linha = [st.session_state.dados_adicionais_casos.get(caso, {}).get(pergunta_extra, "") for caso in casos_ordenados]
+            adicional_tabela += f"| {pergunta_extra} | " + " | ".join(linha) + " |\n"
+        st.markdown(adicional_tabela)
         st.markdown("---")
 
         for nome_caso in casos_ordenados:
@@ -667,6 +702,24 @@ if st.session_state.relatorios_ia:
             mini_tabela.rows[0].cells[j].text = caso
         for j, caso in enumerate(casos_ord):
             mini_tabela.rows[1].cells[j].text = st.session_state.identificacao_exames.get(caso, "")
+        doc.add_paragraph()
+
+        # Dados adicionais dos casos (não entram no texto da IA)
+        doc.add_heading("Dados Adicionais dos Casos", level=2)
+        tabela_adicional = doc.add_table(rows=1 + len(perguntas_adicionais_texto), cols=1 + num_casos)
+        tabela_adicional.style = "Table Grid"
+        tabela_adicional.cell(0, 0).text = "Pergunta"
+        set_cell_shading(tabela_adicional.cell(0, 0), "E0E0E0")
+        for j, caso in enumerate(casos_ord):
+            cell_cabecalho = tabela_adicional.cell(0, j + 1)
+            cell_cabecalho.text = caso
+            set_cell_shading(cell_cabecalho, "E0E0E0")
+        for i, pergunta_extra in enumerate(perguntas_adicionais_texto):
+            linha_atual = i + 1
+            tabela_adicional.cell(linha_atual, 0).text = pergunta_extra
+            for j, caso in enumerate(casos_ord):
+                valor = st.session_state.dados_adicionais_casos.get(caso, {}).get(pergunta_extra, "")
+                tabela_adicional.cell(linha_atual, j + 1).text = valor
         doc.add_paragraph()
 
         # Anexo
@@ -839,6 +892,7 @@ if st.button("Limpar todos os dados da sessão"):
         "escolhas_casos",
         "dados_cabecalho",
         "identificacao_exames",
+        "dados_adicionais_casos",
         "docx_bytes",
     ]:
         if chave in st.session_state:
