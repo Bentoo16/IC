@@ -295,7 +295,7 @@ perguntas = {
             "opcoes": {"Sim": " ", "Não": "O exame não foi classificado corretamente."},
         },
         "Recomendação correta segundo o BI-RADS®": {
-            "opcoes": {"Sim": "Recomenda corretamente o exame segundo o BI-RADS®.", "Não": " No laudo enviado para avaliação, o exame não foi classificado corretamente, a recomendação de conduta não está correta segundo o BI-RADS®."},
+            "opcoes": {"Sim": " ", "Não": " No laudo enviado para avaliação, o exame não foi classificado corretamente, a recomendação de conduta não está correta segundo o BI-RADS®."},
         },
         "Interpretou corretamente todos os achados do exame": {
             "opcoes": {"Sim": "", "Não": " Todos os achados do exame não foram interpretados corretamente."},
@@ -466,25 +466,41 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
 
         st.session_state.dados_adicionais_casos[nome_caso] = dict(dados_adicionais_temp)
 
-        with st.spinner("IA está formatando o relatório..."):
-            try:
-                prompt = (
-                    f"Deixe essas frases em um único texto coeso, não é necessário acrescentar nada, apenas o texto coeso é o suficiente. "
-                    f"Não mude as frases, apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
-                )
-                response = model.generate_content(prompt)
+        TEXTO_SEM_CONSIDERACOES = "Sem considerações específicas sobre o laudo e a qualidade técnica deste exame."
 
-                st.session_state.casos_salvos[nome_caso] = texto_bruto
-                st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
-                st.session_state.identificacao_exames[nome_caso] = id_exame
-                st.session_state.escolhas_casos[nome_caso] = escolhas
-                st.session_state.relatorios_ia[nome_caso] = response.text
-                st.session_state.docx_bytes = None
+        if not texto_para_ia.strip():
+            # Nenhuma frase relevante foi gerada (todas as respostas eram "Sim" e sem
+            # observações/considerações adicionais). Não faz sentido mandar um texto
+            # vazio para a IA, então usamos direto um texto padrão para o caso.
+            st.session_state.casos_salvos[nome_caso] = texto_bruto
+            st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
+            st.session_state.identificacao_exames[nome_caso] = id_exame
+            st.session_state.escolhas_casos[nome_caso] = escolhas
+            st.session_state.relatorios_ia[nome_caso] = TEXTO_SEM_CONSIDERACOES
+            st.session_state.docx_bytes = None
 
-                st.success(f"{nome_caso} processado com sucesso!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"Erro ao gerar relatório: {e}")
+            st.success(f"{nome_caso} processado com sucesso!")
+            st.rerun()
+        else:
+            with st.spinner("IA está formatando o relatório..."):
+                try:
+                    prompt = (
+                        f"Deixe essas frases em um único texto coeso, não é necessário acrescentar nada, apenas o texto coeso é o suficiente. "
+                        f"Não mude as frases, apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
+                    )
+                    response = model.generate_content(prompt)
+
+                    st.session_state.casos_salvos[nome_caso] = texto_bruto
+                    st.session_state.consideracoes_caso[nome_caso] = consideracoes_caso
+                    st.session_state.identificacao_exames[nome_caso] = id_exame
+                    st.session_state.escolhas_casos[nome_caso] = escolhas
+                    st.session_state.relatorios_ia[nome_caso] = response.text
+                    st.session_state.docx_bytes = None
+
+                    st.success(f"{nome_caso} processado com sucesso!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Erro ao gerar relatório: {e}")
 
 # ---------------------------------------------------------------------------
 # Considerações gerais
