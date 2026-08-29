@@ -372,10 +372,10 @@ perguntas = {
 # servem apenas para compor uma tabela própria no documento .docx.
 # ---------------------------------------------------------------------------
 perguntas_adicionais_texto = [
-    "Padrão de Mama segundo o serviço",
-    "Tipo de achado segundo o serviço",
-    "Classificação BI-RADS do serviço",
-    "Classificação BI-RADS dos avaliadores",
+    "Padrão de Mama segundo o serviço: (MARCAR: A, B, C ou D)",
+    "Tipo de achado segundo o serviço: (MARCAR: MCF, CALC, NOD, DISTORC, ASSIM, etc)",
+    "Classificação BI-RADS do serviço: (MARCAR: 0, 1, 2, 3, 4, 5, 6)",
+    "Classificação BI-RADS dos avaliadores: (MARCAR: 0, 1, 2, 3, 4, 5, 6)",
 ]
 
 # ---------------------------------------------------------------------------
@@ -387,7 +387,6 @@ nome_caso = f"Caso {caso_atual}"
 
 st.markdown("---")
 st.subheader("Dados Adicionais do Caso")
-st.caption("Estes campos não entram no texto enviado à IA — aparecem apenas em uma tabela própria no documento final.")
 valores_adicionais_salvos = st.session_state.dados_adicionais_casos.get(nome_caso, {})
 dados_adicionais_temp = {}
 for pergunta_extra in perguntas_adicionais_texto:
