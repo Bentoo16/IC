@@ -244,9 +244,13 @@ perguntas = {
             },
         },
         "Prega inframamária incluída na radiografia - na 0ML": {
-            "opcoes": {
+                "opcoes": {
                 "Sim": " ",
-                "Não": "As imagens das incidências mediolaterais oblíquas (MLO) não incluem a prega inframamária. Por isso as imagens das incidências MLO não mostram a visibilização completa do mamário."
+                "Não": " ",
+            },
+            "sub_opcoes": {
+                "Ausência nas incidências MLO": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem a prega inframamária.",
+                "Ausência nas incidências MLO e CC não estão bem posicionadas": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem a prega inframamária e as mamas para as incidências craniocaudais (CC) também não estão bem posicionadas."
             },
         },
     },
@@ -255,10 +259,6 @@ perguntas = {
             "opcoes": {
                 "Sim": " ",
                 "Não": " ",
-            },
-            "sub_opcoes": {
-                "Ausência nas incidências MLO": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem a prega inframamária.",
-                "Ausência nas incidências MLO e CC não estão bem posicionadas": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem a prega inframamária e as mamas para as incidências craniocaudais (CC) também não estão bem posicionadas."
             },
         },
     },
