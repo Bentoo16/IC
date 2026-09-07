@@ -204,6 +204,14 @@ st.session_state.dados_cabecalho = {
 # Biblioteca de perguntas (organizada por grupos)
 # ---------------------------------------------------------------------------
 perguntas = {
+    "Parecer dos Critérios Solicitados": {
+        "A(s) radiografia(s) preenche(m) o(s) critério(s) solicitado(s)?": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": " ",
+            },
+        },
+    },
     "Avaliação dos Critérios de Posicionamento": {
         "Identificação correta do exame": {
             "opcoes": {
@@ -226,7 +234,7 @@ perguntas = {
         "Visibilização completa do parênquima mamário": {
             "opcoes": {
                 "Sim": " ",
-                "Não": "Este mal posicionamento das mamas da paciente nas incidências não fornece uma visibilização completa do parênquima mamário, podendo prejudicar o diagnóstico de lesões em tecidos mamários de interesse. "
+                "Não": "Este mal posicionamento das quatro incidências não fornece uma visibilização completa do parênquima mamário, podendo prejudicar o diagnóstico devido à visibilização incompleta de tecidos mamários de interesse."
             },
         },
         "Músculo grande peitoral na altura do mamilo ou abaixo - na 0ML": {
@@ -239,6 +247,18 @@ perguntas = {
             "opcoes": {
                 "Sim": " ",
                 "Não": "As imagens das incidências mediolaterais oblíquas (MLO) não incluem a prega inframamária. Por isso as imagens das incidências MLO não mostram a visibilização completa do mamário."
+            },
+        },
+    },
+    "Parecer Final do Posicionamento":{
+        "A(s) radiografia(s) está(ão) bem posicionada(s)?":{
+            "opcoes": {
+                "Sim": " ",
+                "Não": " ",
+            },
+            "sub_opcoes": {
+                "Ausência nas incidências MLO": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem a prega inframamária.",
+                "Ausência nas incidências MLO e CC não estão bem posicionadas": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem a prega inframamária e as mamas para as incidências craniocaudais (CC) também não estão bem posicionadas."
             },
         },
     },
@@ -266,9 +286,10 @@ perguntas = {
             },
         },
         "As microcalcificações representa lesão verdadeira? (se houver lesão)": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": " "
+            "opcoes": {"Sim": " ", "Não": " "},
+            "gatilho_sub_opcoes": "Sim",
+            "sub_opcoes": {
+                "Sem descrição das calcificações": "As calcificações identificadas no exame devem ser descritas quanto à morfologia, distribuição, extensão, localização incluindo terço, quadrante e horário na mama, além de distância da papila segundo a quinta edição do BI-RADS ® .",
             },
         },
         "A opacidade representa lesão verdadeira? (se houver lesão)": {
@@ -278,9 +299,26 @@ perguntas = {
             },
         },
         "O tecido glandular está adequadamente claro": {
+            "opcoes": {"Sim": " ", "Não": " "},
+            "gatilho_sub_opcoes": "Sim",
+            "sub_opcoes": {
+                "Sem classificação do nódulo": "O nódulo descrito no laudo deste exame deve ser classificado quanto a densidade, forma, margem, tamanho, presença de achados associados (distorção arquitetural/ microcalcificações...), localização incluindo terço, quadrante e horário na mama, além de distância da papila segundo a quinta edição do BI-RADS ®."
+            },
+        },
+    },
+    "Parecer Final dos Critérios Anatômicos": {
+        "A(s) radiografia(s) serve(m)) para laudo?": {
             "opcoes": {
                 "Sim": " ",
-                "Não": " "
+                "Não": " ",
+            },
+        },
+    },
+    "Parecer Final da Imagem Clínica": {
+        "Considerando os blocos A e B, as radiografias servem para o laudo?": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": " ",
             },
         },
     },
@@ -301,6 +339,14 @@ perguntas = {
             "opcoes": {"Sim": "", "Não": " Todos os achados do exame não foram interpretados corretamente."},
         },
     },
+    "Parecer Final do Laudo": {
+        "O laudo segue os requisitos solicitados na Normativa do CBR ou na Portaria?": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": " ",
+            },
+        },
+    },
     "Aspectos Físicos da Imagem": {
         "Contraste adequado": {
             "opcoes": {"Sim": " ", "Não": " "},
@@ -310,7 +356,7 @@ perguntas = {
                     "entre os tons de cinza claros e escuros presentes. Para que o contraste "
                     "das imagens seja considerado adequado, essa diferença deve ser menos acentuada."
                 ),
-                "Contraste muito alto (onsiderado sem qualidade técnica)": (
+                "Contraste muito alto (considerado sem qualidade técnica)": (
                     "As imagens deste exame estão com o contraste muito alto e com as regiões "
                     "correspondentes a tecidos mamários mais densos com os tons de cinza claro "
                     "saturados (muito claros, quase transparentes), o mesmo ocorrendo nas regiões "
@@ -337,7 +383,7 @@ perguntas = {
         "Saturação correta nas áreas claras": {
             "opcoes": {
                 "Sim": " ",
-                "Não": " ",
+                "Não": "As imagens deste exame estão com os tons de cinza claro saturados (muito claros, quase transparentes) nas regiões correspondentes a tecidos mamários mais densos. O mesmo ocorre nas regiões das axilas nas incidências mediolaterais oblíquas (MLO). Este aspecto das imagens dificulta ou mesmo inviabiliza a identificação de microcalcificações nas regiões de tecidos densos.",
             },
         },
         "Saturação correta nas áreas escuras": {
@@ -362,6 +408,14 @@ perguntas = {
                 "Possui artefatos na forma de linhas finas gerados pelo movimento insuficiente da grade antidifusora do mamógrafo. ": "Adicionalmente, elas apresentam diversos artefatos na forma de finas linhas verticais de tons de cinza claro gerados pelo movimento insuficiente da grade antidifusora do mamógrafo. Estas linhas causam uma impressão de ruído (aspecto granulado) perceptível nas imagens das pacientes.",
                 "Possui artefatos decorrentes de desgastes e/ou danificadas. ": "As imagens enviadas para avaliação apresentam inúmeros artefatos de diversos tipos decorrentes das placas de imagem (IP) desgastadas e/ou danificadas.",
                 "Possui escala métrica sobre as imagens das mamas. ": "Por fim, as imagens da mama têm uma escala métrica impressa na lateral do filme próxima à parede torácica da paciente. Estas escalas métricas impressas sobre as imagens das mamas constituem artefatos que devem ser retirados. "
+            },
+        },
+    },
+    "Parecer Final da Parte Física": {
+        "A(s) radiografia(s) serve(m) para laudo(s)?": {
+            "opcoes": {
+                "Sim": " ",
+                "Não": " ",
             },
         },
     },
@@ -485,8 +539,8 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
             with st.spinner("IA está formatando o relatório..."):
                 try:
                     prompt = (
-                        f"Deixe essas frases em um único texto coeso, não é necessário acrescentar nada, apenas o texto coeso é o suficiente. "
-                        f"Não mude as frases, apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
+                        f"Deixe essas frases em um único texto coeso, não é necessário acrescentar nada, apenas o texto coeso é o suficiente. Além disso, organize as ideias apresentadas sem mudar o conteúdo."
+                        f"Não mude o conteúdo, apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
                     )
                     response = model.generate_content(prompt)
 
@@ -768,7 +822,6 @@ if st.session_state.relatorios_ia:
         # Perguntas sem sub_opcoes usam a chave "_default".
         # Perguntas com sub_opcoes podem ter um texto por sub-opção; se uma
         # sub-opção não tiver entrada própria, cai no "_default" da pergunta
-        # (se existir) — assim dá pra ir preenchendo aos poucos.
         recomendacoes = {
             "Recomendação correta segundo o BI-RADS®": {
                 "_default":
@@ -786,7 +839,6 @@ if st.session_state.relatorios_ia:
                     "h) nome e assinatura do médico interpretador do exame.\"",
             },
             "Contraste adequado": {
-                # TODO: revisar/ajustar cada texto — estes são placeholders de base.
                 "Contraste alto":
                     "As imagens estão com o contraste aumentado devido à acentuada diferença entre os tons de cinza claros e escuros presentes. Para que o contraste das imagens seja considerado adequado, essa diferença deve ser menos acentuada.",
                 "Contraste muito alto":
@@ -826,11 +878,50 @@ if st.session_state.relatorios_ia:
                 "_default":
                     "É recomendado ao físico médico responsável pelo Serviço ajsutar os parâmetros de operação do mamógrafo (kV, mAs e combinação alvo-filtro) com vistas à otimização das técnicas radiográficas e à redução do ruído (aspecto granulado da imagem) observado nas imagens enviadas para avaliação. Ver no folder 'Critérios de Qualidade da Imagem em Mamografia', enviado em anexo, o conceito de 'Ruído da Imagem'."
             },
-            "Área de fundo adequadamente escura (enegrecimento do filme)":{
+            "A área de fundo está adequadamente escura (enegrecimento película)":{
                 "_default":
                     "É recomendado ao pessoal de manutenção da impressora de filmes ou ao físico médico responsável pelo Serviço ajustar os parâmetros de operações da impressora no folder 'Critérios de Qualidade da Imagem em Mamografia', enviado em anexo. Atenção especial deve ser dada ao critério 'Área de fundo adequadamente escura (enegrecimento do filme)'"
             },
+            "Utiliza corretamente o Léxico BI-RADS® ou SISMAMA":{
+                "_default":
+                    "É recomendado aos médicos do serviço a realização do curso de reciclagem em diagnóstico mamário “Atualização em BI-RADS”, oferecido pelo Colégio Brasileiro de Radiologia. O curso é gratuito para os médicos dos serviços que participam do Programa de Qualidade em Mamografia do INCA. O detalhamento do processo para realização do curso indicado será encaminhado em um e-mail à parte, que tratará exclusivamente desse assunto."
+            },
+            "Saturação correta nas áreas claras":{
+                "_default":
+                    "É recomendado ao pessoal de manutenção da impressora de filmes ou ao físico médico responsável pelo Serviço ajustar os parâmetros de operação da impressora com vistas à otimização da qualidade das imagens em relação aos critérios apresentados e descritos no folder “Critérios de Qualidade da Imagem em Mamografia”, enviado em anexo. Atenção especial deve ser dada ao critério “Saturação correta nas áreas claras das imagens”, onde há predominância de tecido fibroglandular (tecido fibroso e parênquima mamário) e axilas."
+            },
         }
+
+        # ---------------------------------------------------------------
+        # Recomendações "por grupo": diferente das recomendações acima
+        # (que são ligadas a UMA pergunta específica), estas disparam se
+        # QUALQUER pergunta de um grupo (menos as que você excluir) tiver
+        # a resposta indicada em "resposta_gatilho". A recomendação
+        # aparece só UMA VEZ no documento, mesmo que várias perguntas do
+        # grupo tenham disparado para o mesmo caso ou para casos diferentes.
+        #
+        # Para CRIAR uma nova recomendação de grupo, copie um bloco abaixo
+        # e ajuste "grupo", "resposta_gatilho", "perguntas_excluidas" (ou
+        # "perguntas_incluidas") e "texto".
+        # Para REMOVER, basta apagar o bloco correspondente da lista.
+        #
+        # - "perguntas_excluidas": lista de perguntas do grupo que NÃO
+        #   devem contar para disparar essa recomendação (as demais do
+        #   grupo contam automaticamente).
+        # - "perguntas_incluidas": se preenchida, usa EXATAMENTE essa
+        #   lista de perguntas (ignora "perguntas_excluidas"). Útil se
+        #   você quiser escolher a dedo quais perguntas participam, em
+        #   vez de excluir só uma ou duas.
+        # ---------------------------------------------------------------
+        recomendacoes_por_grupo = [
+            {
+                "grupo": "Avaliação dos Critérios de Posicionamento",
+                "resposta_gatilho": "Não",
+                "perguntas_excluidas": ["Identificação correta do exame"],
+                "perguntas_incluidas": [],
+                "texto": "É recomendado um curso de aprimoramento em posicionamento para a equipe de técnicas do serviço. O INCA disponibiliza periodicamente o curso “Atualização em Mamografia para Técnicos e Tecnólogos em Radiologia”, na modalidade EAD. Acompanhe pelo site ead.inca.gov.br quando serão abertas as inscrições para a próxima turma.",
+            },
+        ]
 
         def resposta_do_caso(caso, pergunta):
             item = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, {})
@@ -847,10 +938,29 @@ if st.session_state.relatorios_ia:
                     return questoes[pergunta].get("gatilho_sub_opcoes", "Não")
             return "Não"
 
+        def perguntas_da_config_grupo(config):
+            questoes_grupo = perguntas.get(config["grupo"], {})
+            incluidas = config.get("perguntas_incluidas") or []
+            if incluidas:
+                return incluidas
+            excluidas = set(config.get("perguntas_excluidas") or [])
+            return [p for p in questoes_grupo if p not in excluidas]
+
+        def grupo_disparado(caso, config):
+            resposta_gatilho = config.get("resposta_gatilho", "Não")
+            return any(
+                resposta_do_caso(caso, pergunta) == resposta_gatilho
+                for pergunta in perguntas_da_config_grupo(config)
+            )
+
         tem_recomendacao = any(
             resposta_do_caso(caso, pergunta) == obter_gatilho(pergunta)
             for caso in casos_ord
             for pergunta in recomendacoes
+        ) or any(
+            grupo_disparado(caso, config)
+            for caso in casos_ord
+            for config in recomendacoes_por_grupo
         )
         if tem_recomendacao:
             doc.add_heading("Recomendações", level=0)
@@ -873,6 +983,15 @@ if st.session_state.relatorios_ia:
                                 textos_inseridos.add(texto)
                                 p = doc.add_paragraph(style="List Bullet")
                                 p.add_run(texto)
+
+            for caso in casos_ord:
+                for config in recomendacoes_por_grupo:
+                    if grupo_disparado(caso, config):
+                        texto = config.get("texto")
+                        if texto and texto not in textos_inseridos:
+                            textos_inseridos.add(texto)
+                            p = doc.add_paragraph(style="List Bullet")
+                            p.add_run(texto)
 
         if st.session_state.relatorio_geral_salvo:
             doc.add_paragraph()
