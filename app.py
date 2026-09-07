@@ -487,8 +487,30 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
     if caso_ja_existe and not confirmacao:
         st.warning("Marque a confirmação para sobrescrever o caso.")
     else:
+        TEXTO_LAUDO_SEM_CONSIDERACOES = "Sem considerações específicas sobre o laudo deste caso."
+        titulos_grupo_laudo = set(perguntas["Avaliação dos Critérios de Laudos"].keys())
+        respostas_grupo_laudo = {
+            item["titulo"]: item["escolha"]
+            for item in respostas_temporarias
+            if item["titulo"] in titulos_grupo_laudo
+        }
+        laudo_tudo_sim = (
+            len(respostas_grupo_laudo) == len(titulos_grupo_laudo)
+            and all(escolha == "Sim" for escolha in respostas_grupo_laudo.values())
+        )
+
         respostas_finais = []
+        laudo_texto_inserido = False
         for item in respostas_temporarias:
+            if item["titulo"] in titulos_grupo_laudo and laudo_tudo_sim:
+                # Todas as perguntas deste grupo foram "Sim": em vez dos textos
+                # em branco de cada pergunta, insere uma única frase fixa.
+                if not laudo_texto_inserido:
+                    respostas_finais.append(TEXTO_LAUDO_SEM_CONSIDERACOES)
+                    laudo_texto_inserido = True
+                if item["obs"]:
+                    respostas_finais.append(f"Detalhe adicional: {item['obs']}")
+                continue
             # Encontrar o grupo e a pergunta
             for questoes in perguntas.values():
                 if item["titulo"] in questoes:
@@ -520,7 +542,7 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
 
         st.session_state.dados_adicionais_casos[nome_caso] = dict(dados_adicionais_temp)
 
-        TEXTO_SEM_CONSIDERACOES = "Sem considerações específicas sobre o laudo e a qualidade técnica deste exame."
+        TEXTO_SEM_CONSIDERACOES = "Sem considerações específicas sobre o caso."
 
         if not texto_para_ia.strip():
             # Nenhuma frase relevante foi gerada (todas as respostas eram "Sim" e sem
