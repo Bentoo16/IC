@@ -290,6 +290,7 @@ perguntas = {
             "gatilho_sub_opcoes": "Sim",
             "sub_opcoes": {
                 "Sem descrição das calcificações": "As calcificações identificadas no exame devem ser descritas quanto à morfologia, distribuição, extensão, localização incluindo terço, quadrante e horário na mama, além de distância da papila segundo a quinta edição do BI-RADS ® .",
+                "Vazio": " ",
             },
         },
         "A opacidade representa lesão verdadeira? (se houver lesão)": {
