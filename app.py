@@ -302,7 +302,8 @@ perguntas = {
             "opcoes": {"Sim": " ", "Não": " "},
             "gatilho_sub_opcoes": "Sim",
             "sub_opcoes": {
-                "Sem classificação do nódulo": "O nódulo descrito no laudo deste exame deve ser classificado quanto a densidade, forma, margem, tamanho, presença de achados associados (distorção arquitetural/ microcalcificações...), localização incluindo terço, quadrante e horário na mama, além de distância da papila segundo a quinta edição do BI-RADS ®."
+                "Sem classificação do nódulo": "O nódulo descrito no laudo deste exame deve ser classificado quanto a densidade, forma, margem, tamanho, presença de achados associados (distorção arquitetural/ microcalcificações...), localização incluindo terço, quadrante e horário na mama, além de distância da papila segundo a quinta edição do BI-RADS ®.",
+                "Vazio": " ",
             },
         },
     },
