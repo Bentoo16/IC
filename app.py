@@ -240,7 +240,7 @@ perguntas = {
         "Músculo grande peitoral na altura do mamilo ou abaixo - na 0ML": {
             "opcoes": {
                 "Sim": " ",
-                "Não": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem o músculo grande peitoral na altura do mamilo ou abaixo e as mamas para as incidências craniocaudais (CC) não estão bem posicionadas. Este mal posicionamento das mamas da paciente pode prejudicar o diagnóstico devido à visibilização incompleta de tecidos mamários de interesse. "
+                "Não": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem o músculo grande peitoral na altura do mamilo ou abaixo."
             },
         },
         "Prega inframamária incluída na radiografia - na 0ML": {
