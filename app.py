@@ -7,6 +7,7 @@ from docx.shared import RGBColor, Pt
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from io import BytesIO
 import re
+import unicodedata
 
 # ---------------------------------------------------------------------------
 # CSS customizado
@@ -112,6 +113,18 @@ def contar_perguntas(grupos):
     for qs in grupos.values():
         total += len(qs)
     return total
+
+
+def sanitizar_nome_arquivo(texto):
+    """Transforma um texto livre (ex.: nome do serviço) em algo seguro para
+    usar como nome de arquivo: sem acentos, sem caracteres especiais e com
+    espaços trocados por underscore."""
+    if not texto or not texto.strip():
+        return "Servico"
+    texto_sem_acento = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
+    texto_limpo = re.sub(r'[^\w\s-]', '', texto_sem_acento).strip()
+    texto_final = re.sub(r'[-\s]+', '_', texto_limpo)
+    return texto_final or "Servico"
 
 
 def set_cell_shading(cell, color):
@@ -541,7 +554,7 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
 # Considerações gerais
 # ---------------------------------------------------------------------------
 st.markdown("---")
-st.subheader("Considerações Gerais")
+st.subheader("Resumo dos casos")
 st.session_state.consideracoes_gerais = st.text_area(
     "Digite aqui observações que se aplicam a todos os casos:",
     value=st.session_state.consideracoes_gerais,
@@ -903,7 +916,7 @@ if st.session_state.relatorios_ia:
         if st.session_state.relatorio_geral_salvo:
             doc.add_paragraph()
             p = doc.add_paragraph()
-            p.add_run("Todos os casos:").bold = True
+            p.add_run("Resumo dos casos:").bold = True
             for linha in st.session_state.relatorio_geral_salvo.strip().split("\n"):
                 if linha.strip():
                     doc.add_paragraph(limpar_formatacao(linha))
@@ -919,10 +932,11 @@ if st.session_state.relatorios_ia:
         st.success("Documento gerado! Use o botão abaixo para baixar.")
 
     if st.session_state.get("docx_bytes"):
+        nome_servico_arquivo = sanitizar_nome_arquivo(st.session_state.dados_cabecalho.get("servico", ""))
         st.download_button(
             label="Baixar Documento Final (.docx)",
             data=st.session_state.docx_bytes,
-            file_name="relatorio_final.docx",
+            file_name=f"relatório_{nome_servico_arquivo}.docx",
             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             use_container_width=True,
         )
