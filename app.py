@@ -297,6 +297,50 @@ perguntas_adicionais_texto = [
 ]
 
 # ---------------------------------------------------------------------------
+# Atalho: marcar os 5 casos como "Sim" em tudo (sem considerações específicas)
+# ---------------------------------------------------------------------------
+st.markdown("---")
+st.subheader("Atalho Rápido")
+possui_consideracoes = st.radio(
+    "Algum dos 5 casos possui consideração específica a ser registrada?",
+    ["Sim, vou analisar cada caso individualmente", "Não, os 5 casos estão 'Sim' em tudo"],
+    key="modo_atalho_sem_consideracoes",
+)
+
+if possui_consideracoes == "Não, os 5 casos estão 'Sim' em tudo":
+    nomes_casos_atalho = [f"Caso {n}" for n in range(1, total_casos + 1)]
+    casos_ja_salvos_atalho = [nome for nome in nomes_casos_atalho if nome in st.session_state.casos_salvos]
+    confirmar_atalho = True
+    if casos_ja_salvos_atalho:
+        st.warning(f"Isto vai sobrescrever os casos já salvos: {', '.join(casos_ja_salvos_atalho)}.")
+        confirmar_atalho = st.checkbox(
+            "Confirmo que desejo sobrescrever os casos acima.",
+            key="confirmar_atalho_sem_consideracoes",
+        )
+
+    if st.button(
+        "Marcar os 5 casos como 'Sim' em tudo e salvar",
+        type="primary",
+        use_container_width=True,
+        disabled=not confirmar_atalho,
+    ):
+        TEXTO_LAUDO_SEM_CONSIDERACOES = "Sem considerações específicas sobre o laudo deste caso."
+        titulos_laudo_atalho = list(perguntas["Avaliação dos Critérios de Laudos"].keys())
+        for nome in nomes_casos_atalho:
+            escolhas_atalho = {
+                titulo: {"resposta": "Sim", "sub_opcao": []}
+                for titulo in titulos_laudo_atalho
+            }
+            st.session_state.casos_salvos[nome] = TEXTO_LAUDO_SEM_CONSIDERACOES
+            st.session_state.consideracoes_caso[nome] = ""
+            st.session_state.identificacao_exames.setdefault(nome, "")
+            st.session_state.escolhas_casos[nome] = escolhas_atalho
+            st.session_state.relatorios_ia[nome] = TEXTO_LAUDO_SEM_CONSIDERACOES
+        st.session_state.docx_bytes = None
+        st.success("Os 5 casos foram marcados como 'Sim' em tudo e salvos!")
+        st.rerun()
+
+# ---------------------------------------------------------------------------
 # Seleção do caso e perguntas
 # ---------------------------------------------------------------------------
 st.markdown("---")
