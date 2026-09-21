@@ -533,7 +533,7 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
             with st.spinner("IA está formatando o relatório..."):
                 try:
                     prompt = (
-                        f"Deixe essas frases em um único parágrafo coeso, não é necessário acrescentar nada, apenas o texto coeso é o suficiente. Além disso, organize as ideias apresentadas sem mudar o conteúdo."
+                        f"Deixe essas frases em um único texto coeso, evite acrescentar ideias suas e deixe as frases separadas, não é necessário acrescentar nada, apenas o texto coeso é o suficiente. Além disso, organize as ideias apresentadas sem mudar o conteúdo."
                         f"Não mude o conteúdo, se nada for enviado deixe apenas a frase 'Não há considerações específicas sobre o laudo.' apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
                     )
                     response = model.generate_content(prompt)
