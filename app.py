@@ -534,7 +534,7 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
                 try:
                     prompt = (
                         f"Deixe essas frases em um único parágrafo coeso, não é necessário acrescentar nada, apenas o texto coeso é o suficiente. Além disso, organize as ideias apresentadas sem mudar o conteúdo."
-                        f"Não mude o conteúdoe não acrescente ideias suas, apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
+                        f"Não mude o conteúdo, se nada for enviado deixe apenas a frase "Não há considerações específicas sobre o laudo." apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
                     )
                     response = model.generate_content(prompt)
 
