@@ -371,7 +371,7 @@ COMBINACOES_RESPOSTA = [
             "Recomendação correta segundo o BI-RADS®",
         ],
         "resposta_gatilho": "Não",
-        "texto": "[TODO: Breno, me diga a frase exata que deve aparecer quando as duas perguntas acima forem 'Não' juntas.]",
+        "texto": "O exame não foi classificado corretamente e, consequentemente, a recomendação de conduta também não está correta.",
     },
 ]
 
@@ -533,8 +533,8 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
             with st.spinner("IA está formatando o relatório..."):
                 try:
                     prompt = (
-                        f"Deixe essas frases em um único texto coeso, não é necessário acrescentar nada, apenas o texto coeso é o suficiente. Além disso, organize as ideias apresentadas sem mudar o conteúdo."
-                        f"Não mude o conteúdo, apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
+                        f"Deixe essas frases em um único parágrafo coeso, não é necessário acrescentar nada, apenas o texto coeso é o suficiente. Além disso, organize as ideias apresentadas sem mudar o conteúdo."
+                        f"Não mude o conteúdoe não acrescente ideias suas, apenas deixe o texto coeso para o {nome_caso}: {texto_para_ia}"
                     )
                     response = model.generate_content(prompt)
 
