@@ -3,7 +3,8 @@ import google.generativeai as genai
 from docx import Document
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import RGBColor
+from docx.shared import RGBColor, Pt
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 from io import BytesIO
 import re
 
@@ -14,35 +15,54 @@ st.markdown("""
 <style>
     .tabela-respostas {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
         font-size: 0.85rem;
         margin-bottom: 1.5rem;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
     .tabela-respostas th {
-        background: #E0E0E0;
-        color: #333;
-        padding: 0.5rem;
+        background: #1F4E79;
+        color: #ffffff;
+        padding: 0.6rem 0.5rem;
         text-align: center;
-        border: 1px solid #ccc;
+        border: 1px solid #163a5c;
+        font-weight: 600;
     }
     .tabela-respostas th.caso-header {
-        color: #FF0000;
+        background: #2E75B6;
+        color: #ffffff;
+    }
+    .tabela-respostas tr:nth-child(even) td {
+        background: #F4F7FB;
+    }
+    .tabela-respostas tr:hover td {
+        background: #E8F0FA;
     }
     .tabela-respostas td {
-        padding: 0.4rem 0.5rem;
+        padding: 0.45rem 0.5rem;
         border: 1px solid #dee2e6;
         text-align: center;
+        transition: background 0.15s ease-in-out;
     }
     .tabela-respostas td:first-child {
         text-align: left;
         font-weight: 500;
+        color: #1F1F1F;
     }
     .preview-box {
-        background: #f4f4f4;
-        border-left: 4px solid #555;
+        background: #F4F7FB;
+        border-left: 5px solid #1F4E79;
         padding: 1rem 1.2rem;
-        border-radius: 6px;
-        margin-bottom: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        line-height: 1.6;
+    }
+    .preview-box strong {
+        color: #1F4E79;
     }
     .progresso-texto {
         font-size: 0.85rem;
@@ -51,6 +71,7 @@ st.markdown("""
     }
     .stButton>button {
         font-weight: 600;
+        border-radius: 8px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -98,6 +119,47 @@ def set_cell_shading(cell, color):
     shading.set(qn('w:fill'), color)
     shading.set(qn('w:val'), 'clear')
     cell._tc.get_or_add_tcPr().append(shading)
+
+
+# ---------------------------------------------------------------------------
+# Paleta e helpers visuais do documento .docx
+# ---------------------------------------------------------------------------
+COR_PRIMARIA = "1F4E79"   # azul escuro - cabeçalho principal das tabelas
+COR_SECUNDARIA = "2E75B6"  # azul médio - linha "Caso" das tabelas
+COR_ZEBRA = "F4F7FB"       # cinza-azulado bem claro - linhas alternadas
+
+
+def estilizar_documento(doc):
+    """Define fonte base e cores dos títulos para todo o documento."""
+    estilo_normal = doc.styles["Normal"]
+    estilo_normal.font.name = "Calibri"
+    estilo_normal.font.size = Pt(11)
+
+    tamanhos_titulo = {0: 20, 1: 15, 2: 13}
+    for nivel, tamanho in tamanhos_titulo.items():
+        estilo = doc.styles[f"Heading {nivel}" if nivel > 0 else "Title"]
+        estilo.font.name = "Calibri"
+        estilo.font.size = Pt(tamanho)
+        estilo.font.color.rgb = RGBColor.from_string(COR_PRIMARIA)
+        estilo.font.bold = True
+
+
+def formatar_celula(cell, texto=None, cor_fundo=None, cor_texto=None, negrito=False, centralizar=True):
+    """Preenche uma célula de tabela com texto formatado (cor, negrito, fundo)."""
+    if texto is not None:
+        cell.text = ""
+        paragrafo = cell.paragraphs[0]
+        run = paragrafo.add_run(texto)
+    else:
+        paragrafo = cell.paragraphs[0]
+        run = paragrafo.runs[0] if paragrafo.runs else paragrafo.add_run("")
+    run.bold = negrito
+    if cor_texto:
+        run.font.color.rgb = RGBColor.from_string(cor_texto)
+    if centralizar:
+        paragrafo.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    if cor_fundo:
+        set_cell_shading(cell, cor_fundo)
 
 
 # ---------------------------------------------------------------------------
@@ -204,126 +266,6 @@ st.session_state.dados_cabecalho = {
 # Biblioteca de perguntas (organizada por grupos)
 # ---------------------------------------------------------------------------
 perguntas = {
-    "Parecer dos Critérios Solicitados": {
-        "A(s) radiografia(s) preenche(m) o(s) critério(s) solicitado(s)?": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": " ",
-            },
-        },
-    },
-    "Avaliação dos Critérios de Posicionamento": {
-        "Identificação correta do exame": {
-            "opcoes": {
-                "Sim": "",
-                "Não": "A identificação das imagens enviadas para avaliação não está correta porque há texto impresso sobre áreas das mamas."
-            },
-        },
-        "Adequada compressão de mama": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": "As imagens da mama deste caso estão com acentuada perda de definição das estruturas anatômicas (imagens tremidas) possivelmente causada pela pouca compressão da mama ou por movimentação da paciente durante a aquisição das imagens. "
-            },
-        },
-        "Mamilo paralelo ao filme": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": "Adicionalmente, nestas incidências, os mamilos não estão perfilados paralelos ao filme. "
-            },
-        },
-        "Visibilização completa do parênquima mamário": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": "Este mal posicionamento das quatro incidências não fornece uma visibilização completa do parênquima mamário, podendo prejudicar o diagnóstico devido à visibilização incompleta de tecidos mamários de interesse."
-            },
-        },
-        "Músculo grande peitoral na altura do mamilo ou abaixo - na 0ML": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem o músculo grande peitoral na altura do mamilo ou abaixo."
-            },
-        },
-        "Prega inframamária incluída na radiografia - na 0ML": {
-                "opcoes": {
-                "Sim": " ",
-                "Não": " ",
-            },
-            "sub_opcoes": {
-                "Ausência nas incidências MLO": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem a prega inframamária.",
-                "Ausência nas incidências MLO e CC não estão bem posicionadas": "As imagens das incidências mediolaterais oblíquas (MLO) deste caso não incluem a prega inframamária e as mamas para as incidências craniocaudais (CC) também não estão bem posicionadas."
-            },
-        },
-    },
-    "Parecer Final do Posicionamento":{
-        "A(s) radiografia(s) está(ão) bem posicionada(s)?":{
-            "opcoes": {
-                "Sim": " ",
-                "Não": " ",
-            },
-        },
-    },
-    "Avaliação dos Critérios Clínicos de Qualidade da Imagem": {
-        "Visibilização adequada da pele (ausência na convencional ou presença na digital)":{
-            "opcoes": {
-                "Sim": " ",
-                "Não": " "
-            },
-            "sub_opcoes": {
-                "Dobra de pele junto a parede toráxica e papila não perfilada": "Na parte inferior da imagem desta incidência da mama (MLO) se observa uma dobra de pele junto à parede torácica e na imagem da mama (MLO) a papila não está perfilada em relação ao detector de imagem.",
-                "Assimetria difusa da mama associada a espessamento da pele e do complexo areolopapilar.": "Neste caso, há assimetria difusa da mama associada a espessamento da pele e do complexo areolopapilar."
-            },
-        },
-        "Visibilização das estruturas vasculares através do parênquima denso": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": " "
-             },
-        },
-        "Visibilização dos ligamentos de Cooper": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": " "
-            },
-        },
-        "As microcalcificações representa lesão verdadeira? (se houver lesão)": {
-            "opcoes": {"Sim": " ", "Não": " "},
-            "gatilho_sub_opcoes": "Sim",
-            "sub_opcoes": {
-                "Sem descrição das calcificações": "As calcificações identificadas no exame devem ser descritas quanto à morfologia, distribuição, extensão, localização incluindo terço, quadrante e horário na mama, além de distância da papila segundo a quinta edição do BI-RADS ® .",
-                "Vazio": " ",
-            },
-        },
-        "A opacidade representa lesão verdadeira? (se houver lesão)": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": " "
-            },
-        },
-        "O tecido glandular está adequadamente claro": {
-            "opcoes": {"Sim": " ", "Não": " "},
-            "gatilho_sub_opcoes": "Sim",
-            "sub_opcoes": {
-                "Sem classificação do nódulo": "O nódulo descrito no laudo deste exame deve ser classificado quanto a densidade, forma, margem, tamanho, presença de achados associados (distorção arquitetural/ microcalcificações...), localização incluindo terço, quadrante e horário na mama, além de distância da papila segundo a quinta edição do BI-RADS ®.",
-                "Vazio": " ",
-            },
-        },
-    },
-    "Parecer Final dos Critérios Anatômicos": {
-        "A(s) radiografia(s) serve(m)) para laudo?": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": " ",
-            },
-        },
-    },
-    "Parecer Final da Imagem Clínica": {
-        "Considerando os blocos A e B, as radiografias servem para o laudo?": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": " ",
-            },
-        },
-    },
     "Avaliação dos Critérios de Laudos": {
         "Resumo da história presente": {
             "opcoes": {"Sim": " ", "Não": "É importante que nos laudos conste a indicação do exame. Essa indicação deve conter uma história resumida da paciente (exame de rastreamento x diagnóstico / história familiar / antecedentes cirúrgicos e resultados de biópsias / sintomas e queixas da paciente ... )."},
@@ -339,86 +281,6 @@ perguntas = {
         },
         "Interpretou corretamente todos os achados do exame": {
             "opcoes": {"Sim": "", "Não": " Todos os achados do exame não foram interpretados corretamente."},
-        },
-    },
-    "Parecer Final do Laudo": {
-        "O laudo segue os requisitos solicitados na Normativa do CBR ou na Portaria?": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": " ",
-            },
-        },
-    },
-    "Aspectos Físicos da Imagem": {
-        "Contraste adequado": {
-            "opcoes": {"Sim": " ", "Não": " "},
-            "sub_opcoes": {
-                "Contraste alto": (
-                    "As imagens estão com o contraste aumentado devido à acentuada diferença "
-                    "entre os tons de cinza claros e escuros presentes. Para que o contraste "
-                    "das imagens seja considerado adequado, essa diferença deve ser menos acentuada."
-                ),
-                "Contraste muito alto (considerado sem qualidade técnica)": (
-                    "As imagens deste exame estão com o contraste muito alto e com as regiões "
-                    "correspondentes a tecidos mamários mais densos com os tons de cinza claro "
-                    "saturados (muito claros, quase transparentes), o mesmo ocorrendo nas regiões "
-                    "das axilas nas incidências mediolaterais oblíquas (MLO). Este aspecto das "
-                    "imagens dificulta ou mesmo inviabiliza a identificação de microcalcificações "
-                    "nas regiões de tecidos densos. Portanto, as imagens impressas enviadas para "
-                    "avaliação foram consideradas sem qualidade técnica para a interpretação diagnóstica."
-                ),
-                "Contraste baixo": (
-                    "As imagens das quatro incidências estão muito claras e, por conseguinte, com "
-                    "o contraste reduzido devido à pouca diferença entre os tons de cinza claros "
-                    "(regiões de tecido fibroglandular) e de cinza escuros (regiões de tecido "
-                    "subcutâneo e tecido adiposo retromamário) presentes. Para que o contraste das "
-                    "imagens seja considerado adequado, essa diferença deve ser mais acentuada."
-                ),
-            },
-        },
-        "Definição de estruturas": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": "As imagens da mama deste caso estão com acentuada perda de definição das estruturas anatômicas (imagens tremidas) possivelmente causada pela pouca compressão da mama ou por movimentação da paciente durante a aquisição das imagens.",
-            },
-        },
-        "Saturação correta nas áreas claras": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": "As imagens deste exame estão com os tons de cinza claro saturados (muito claros, quase transparentes) nas regiões correspondentes a tecidos mamários mais densos. O mesmo ocorre nas regiões das axilas nas incidências mediolaterais oblíquas (MLO). Este aspecto das imagens dificulta ou mesmo inviabiliza a identificação de microcalcificações nas regiões de tecidos densos.",
-            },
-        },
-        "Saturação correta nas áreas escuras": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": " ",
-            },
-        },
-        "Imagem sem ruído": {
-            "opcoes": {"Sim": " ", "Não": "As imagens enviadas para a avaliação do caso estão com um nível de ruído (aspecto granulado) moderado, porém perceptível a olho nu."},
-        },
-        "A área de fundo está adequadamente escura (enegrecimento película)": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": " ",
-            },
-        },
-        "Imagem sem artefatos (se houver, descrever)": {
-            "opcoes": {"Sim": " ", "Não": " "},
-            #"gatilho_sub_opcoes": "Sim",
-            "sub_opcoes": {
-                "Possui artefatos na forma de linhas finas gerados pelo movimento insuficiente da grade antidifusora do mamógrafo. ": "Adicionalmente, elas apresentam diversos artefatos na forma de finas linhas verticais de tons de cinza claro gerados pelo movimento insuficiente da grade antidifusora do mamógrafo. Estas linhas causam uma impressão de ruído (aspecto granulado) perceptível nas imagens das pacientes.",
-                "Possui artefatos decorrentes de desgastes e/ou danificadas. ": "As imagens enviadas para avaliação apresentam inúmeros artefatos de diversos tipos decorrentes das placas de imagem (IP) desgastadas e/ou danificadas.",
-                "Possui escala métrica sobre as imagens das mamas. ": "Por fim, as imagens da mama têm uma escala métrica impressa na lateral do filme próxima à parede torácica da paciente. Estas escalas métricas impressas sobre as imagens das mamas constituem artefatos que devem ser retirados. "
-            },
-        },
-    },
-    "Parecer Final da Parte Física": {
-        "A(s) radiografia(s) serve(m) para laudo(s)?": {
-            "opcoes": {
-                "Sim": " ",
-                "Não": " ",
-            },
         },
     },
 }
@@ -704,6 +566,7 @@ if st.session_state.relatorios_ia:
 
     def criar_docx_limpo():
         doc = Document()
+        estilizar_documento(doc)
 
         doc.add_heading("Instrumento para a análise da qualidade da mamografia", level=0)
         doc.add_paragraph()
@@ -750,38 +613,31 @@ if st.session_state.relatorios_ia:
             tabela.style = "Table Grid"
 
             tabela.cell(0, 0).merge(tabela.cell(1, 0))
-            tabela.cell(0, 0).text = "Pergunta"
-            set_cell_shading(tabela.cell(0, 0), "E0E0E0")
-            set_cell_shading(tabela.cell(1, 0), "E0E0E0")
+            formatar_celula(tabela.cell(0, 0), "Pergunta", cor_fundo=COR_PRIMARIA, cor_texto="FFFFFF", negrito=True)
 
             for idx, caso in enumerate(casos_ord):
                 col_inicio = 1 + idx * 2
                 col_fim = col_inicio + 1
                 tabela.cell(0, col_inicio).merge(tabela.cell(0, col_fim))
-                cell_caso = tabela.cell(0, col_inicio)
-                cell_caso.text = ""
-                run = cell_caso.paragraphs[0].add_run(caso)
-                run.font.color.rgb = RGBColor(0xFF, 0x00, 0x00)
-                set_cell_shading(cell_caso, "E0E0E0")
+                formatar_celula(tabela.cell(0, col_inicio), caso, cor_fundo=COR_SECUNDARIA, cor_texto="FFFFFF", negrito=True)
 
             for idx in range(num_casos):
                 col_sim = 1 + idx * 2
                 col_nao = col_sim + 1
-                tabela.cell(1, col_sim).text = "Sim"
-                set_cell_shading(tabela.cell(1, col_sim), "E0E0E0")
-                tabela.cell(1, col_nao).text = "Não"
-                set_cell_shading(tabela.cell(1, col_nao), "E0E0E0")
+                formatar_celula(tabela.cell(1, col_sim), "Sim", cor_fundo=COR_PRIMARIA, cor_texto="FFFFFF", negrito=True)
+                formatar_celula(tabela.cell(1, col_nao), "Não", cor_fundo=COR_PRIMARIA, cor_texto="FFFFFF", negrito=True)
 
             for i, pergunta in enumerate(perguntas_ord):
                 linha_atual = i + 2
-                tabela.cell(linha_atual, 0).text = pergunta
+                cor_linha = COR_ZEBRA if i % 2 == 1 else None
+                formatar_celula(tabela.cell(linha_atual, 0), pergunta, cor_fundo=cor_linha, centralizar=False)
                 for j, caso in enumerate(casos_ord):
                     item = st.session_state.escolhas_casos.get(caso, {}).get(pergunta, {})
                     resposta = item.get("resposta", "-") if isinstance(item, dict) else item
                     col_sim = 1 + j * 2
                     col_nao = col_sim + 1
-                    tabela.cell(linha_atual, col_sim).text = "X" if resposta == "Sim" else ""
-                    tabela.cell(linha_atual, col_nao).text = "X" if resposta == "Não" else ""
+                    formatar_celula(tabela.cell(linha_atual, col_sim), "X" if resposta == "Sim" else "", cor_fundo=cor_linha, negrito=True)
+                    formatar_celula(tabela.cell(linha_atual, col_nao), "X" if resposta == "Não" else "", cor_fundo=cor_linha, negrito=True)
 
             doc.add_paragraph()
 
@@ -792,27 +648,25 @@ if st.session_state.relatorios_ia:
         mini_tabela = doc.add_table(rows=2, cols=num_casos)
         mini_tabela.style = "Table Grid"
         for j, caso in enumerate(casos_ord):
-            mini_tabela.rows[0].cells[j].text = caso
+            formatar_celula(mini_tabela.rows[0].cells[j], caso, cor_fundo=COR_PRIMARIA, cor_texto="FFFFFF", negrito=True)
         for j, caso in enumerate(casos_ord):
-            mini_tabela.rows[1].cells[j].text = st.session_state.identificacao_exames.get(caso, "")
+            formatar_celula(mini_tabela.rows[1].cells[j], st.session_state.identificacao_exames.get(caso, ""))
         doc.add_paragraph()
 
         # Dados adicionais dos casos (não entram no texto da IA)
         doc.add_heading("Dados Adicionais dos Casos", level=2)
         tabela_adicional = doc.add_table(rows=1 + len(perguntas_adicionais_texto), cols=1 + num_casos)
         tabela_adicional.style = "Table Grid"
-        tabela_adicional.cell(0, 0).text = "Pergunta"
-        set_cell_shading(tabela_adicional.cell(0, 0), "E0E0E0")
+        formatar_celula(tabela_adicional.cell(0, 0), "Pergunta", cor_fundo=COR_PRIMARIA, cor_texto="FFFFFF", negrito=True)
         for j, caso in enumerate(casos_ord):
-            cell_cabecalho = tabela_adicional.cell(0, j + 1)
-            cell_cabecalho.text = caso
-            set_cell_shading(cell_cabecalho, "E0E0E0")
+            formatar_celula(tabela_adicional.cell(0, j + 1), caso, cor_fundo=COR_PRIMARIA, cor_texto="FFFFFF", negrito=True)
         for i, pergunta_extra in enumerate(perguntas_adicionais_texto):
             linha_atual = i + 1
-            tabela_adicional.cell(linha_atual, 0).text = pergunta_extra
+            cor_linha = COR_ZEBRA if i % 2 == 1 else None
+            formatar_celula(tabela_adicional.cell(linha_atual, 0), pergunta_extra, cor_fundo=cor_linha, centralizar=False)
             for j, caso in enumerate(casos_ord):
                 valor = st.session_state.dados_adicionais_casos.get(caso, {}).get(pergunta_extra, "")
-                tabela_adicional.cell(linha_atual, j + 1).text = valor
+                formatar_celula(tabela_adicional.cell(linha_atual, j + 1), valor, cor_fundo=cor_linha)
         doc.add_paragraph()
 
         # Anexo
@@ -862,57 +716,9 @@ if st.session_state.relatorios_ia:
                     "g) recomendação de conduta; e "
                     "h) nome e assinatura do médico interpretador do exame.\"",
             },
-            "Contraste adequado": {
-                "Contraste alto":
-                    "As imagens estão com o contraste aumentado devido à acentuada diferença entre os tons de cinza claros e escuros presentes. Para que o contraste das imagens seja considerado adequado, essa diferença deve ser menos acentuada.",
-                "Contraste muito alto":
-                    "As imagens deste exame estão com o contraste muito alto e com as regiões correspondentes a tecidos mamários mais densos com os tons de cinza claro saturados (muito claros, quase transparentes), o mesmo ocorrendo nas regiões das axilas nas incidências mediolaterais oblíquas (MLO). Este aspecto das imagens dificulta ou mesmo inviabiliza a identificação de microcalcificações nas regiões de tecidos densos. Portanto, as imagens impressas enviadas para avaliação foram consideradas sem qualidade técnica para a interpretação diagnóstica.",
-                "Contraste baixo":
-                    "As imagens das quatro incidências estão muito claras e, por conseguinte, com o contraste reduzido devido à pouca diferença entre os tons de cinza claros (regiões de tecido fibroglandular) e de cinza escuros (regiões de tecido subcutâneo e tecido adiposo retromamário) presentes. Para que o contraste das imagens seja considerado adequado, essa diferença deve ser mais acentuada.",
-            },
-            "Definição de estruturas":{
-                "_default":
-                    "Com vistas a evitar a perda de definição das imagens (imagens tremidas), é recomendado aos profissionais que realizam os exames atenção à compressão correta das mamas e que sinalizem para as pacientes que não se movimentem e prendam a respiração durante a aquisição das imagens."
-            },
-            "Imagem sem artefatos (se houver, descrever)":{
-                "_default":
-                    "É recomendado ao pessoal de manutenção do mamógrafo ajustar o movimento da grade antidifusora de modo que as suas linhas de material radiopaco não sejam registradas nas imagens das pacientes, gerando artefatos. O movimento insuficiente da grade antidifusora do mamógrafo também está gerando um nível de ruído (aspecto granulado) perceptível nas imagens das pacientes. Ver no folder “Critérios de Qualidade da Imagem em Mamografia”, enviado em anexo, as descrições de ruído e artefatos de imagem."
-            },
-            "Identificação correta do exame":{
-                "_default":
-                    "É recomendado a(o)s técnica(o)s responsáveis pela impressão dos exames não sobrepor textos de identificação do serviço, da paciente e das técnicas radiográficas sobre áreas das imagens das mamas."
-            },
-            "Adequada compressão de mama":{
-                "_default":
-                    "Com vistas a evitar a perda de definição das imagens (imagens tremidas), é recomendado aos profissionais que realizam os exames atenção à compressão correta das mamas e que sinalizem para as pacientes que não se movimentem e prendam a respiração durante a aquisição das imagens."
-            },
-            "Visibilização completa do parênquima mamário":{
-                "_default":
-                    "Para o posicionamento adequado as papilas devem estar perfiladas e deve ser incluído todo o tecido fibroglandular nas duas incidências (CC e MLO). A incidência MLO deve conter as pregas inframamárias e o músculo peitoral deve estar na altura ou abaixo das papilas. A incidência CC deve apresentar as papilas equidistantes medial e lateralmente. Deve haver insinuação do músculo peitoral na região central e posterior das mamas na incidência CC e a diferença de parênquima aparente entre esta incidência e a incidência MLO deve ser de no máximo 1,0 cm."
-            },
-            "Músculo grande peitoral na altura do mamilo ou abaixo - na 0ML":{
-                "_default":
-                    "Melhorar a tração e a elevação das mamas nas incidências mediolaterais oblíquas (MLO) de modo a incluir nas imagens a prega inframamária e o músculo grande peitoral na altura ou abaixo da papila."
-            },
-            "Prega inframamária incluída na radiografia - na 0ML":{
-                "_default":
-                    "Melhorar a tração e a elevação das mamas nas incidências mediolaterais oblíquas (MLO) de modo a incluir nas imagens a prega inframamária e o músculo grande peitoral na altura ou abaixo da papila."
-            },
-            "Imagem sem ruído":{
-                "_default":
-                    "É recomendado ao físico médico responsável pelo Serviço ajsutar os parâmetros de operação do mamógrafo (kV, mAs e combinação alvo-filtro) com vistas à otimização das técnicas radiográficas e à redução do ruído (aspecto granulado da imagem) observado nas imagens enviadas para avaliação. Ver no folder 'Critérios de Qualidade da Imagem em Mamografia', enviado em anexo, o conceito de 'Ruído da Imagem'."
-            },
-            "A área de fundo está adequadamente escura (enegrecimento película)":{
-                "_default":
-                    "É recomendado ao pessoal de manutenção da impressora de filmes ou ao físico médico responsável pelo Serviço ajustar os parâmetros de operações da impressora no folder 'Critérios de Qualidade da Imagem em Mamografia', enviado em anexo. Atenção especial deve ser dada ao critério 'Área de fundo adequadamente escura (enegrecimento do filme)'"
-            },
             "Utiliza corretamente o Léxico BI-RADS® ou SISMAMA":{
                 "_default":
                     "É recomendado aos médicos do serviço a realização do curso de reciclagem em diagnóstico mamário “Atualização em BI-RADS”, oferecido pelo Colégio Brasileiro de Radiologia. O curso é gratuito para os médicos dos serviços que participam do Programa de Qualidade em Mamografia do INCA. O detalhamento do processo para realização do curso indicado será encaminhado em um e-mail à parte, que tratará exclusivamente desse assunto."
-            },
-            "Saturação correta nas áreas claras":{
-                "_default":
-                    "É recomendado ao pessoal de manutenção da impressora de filmes ou ao físico médico responsável pelo Serviço ajustar os parâmetros de operação da impressora com vistas à otimização da qualidade das imagens em relação aos critérios apresentados e descritos no folder “Critérios de Qualidade da Imagem em Mamografia”, enviado em anexo. Atenção especial deve ser dada ao critério “Saturação correta nas áreas claras das imagens”, onde há predominância de tecido fibroglandular (tecido fibroso e parênquima mamário) e axilas."
             },
         }
 
@@ -938,13 +744,10 @@ if st.session_state.relatorios_ia:
         #   vez de excluir só uma ou duas.
         # ---------------------------------------------------------------
         recomendacoes_por_grupo = [
-            {
-                "grupo": "Avaliação dos Critérios de Posicionamento",
-                "resposta_gatilho": "Não",
-                "perguntas_excluidas": ["Identificação correta do exame"],
-                "perguntas_incluidas": [],
-                "texto": "É recomendado um curso de aprimoramento em posicionamento para a equipe de técnicas do serviço. O INCA disponibiliza periodicamente o curso “Atualização em Mamografia para Técnicos e Tecnólogos em Radiologia”, na modalidade EAD. Acompanhe pelo site ead.inca.gov.br quando serão abertas as inscrições para a próxima turma.",
-            },
+            # Nenhuma recomendação de grupo ativa no momento (o grupo de
+            # posicionamento, que usava essa estrutura, foi removido).
+            # Para adicionar uma nova, copie o formato do bloco de exemplo
+            # nos comentários acima.
         ]
 
         def resposta_do_caso(caso, pergunta):
