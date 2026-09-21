@@ -341,6 +341,28 @@ if possui_consideracoes == "Não, os 5 casos estão 'Sim' em tudo":
         st.rerun()
 
 # ---------------------------------------------------------------------------
+# Combinações de respostas: quando um CONJUNTO de perguntas específicas
+# recebe a mesma resposta (ex.: "Não" em duas perguntas ao mesmo tempo),
+# usa-se UMA frase conjunta no lugar das frases individuais de cada
+# pergunta. A frase aparece só uma vez, mesmo com várias perguntas
+# disparando a mesma combinação.
+#
+# Para CRIAR uma nova combinação, copie um bloco abaixo e ajuste
+# "perguntas" (a lista de títulos que precisam bater), "resposta_gatilho"
+# e "texto". Para REMOVER, apague o bloco correspondente da lista.
+# ---------------------------------------------------------------------------
+COMBINACOES_RESPOSTA = [
+    {
+        "perguntas": [
+            "Classifica corretamente o exame segundo o BI-RADS®",
+            "Recomendação correta segundo o BI-RADS®",
+        ],
+        "resposta_gatilho": "Não",
+        "texto": "[TODO: Breno, me diga a frase exata que deve aparecer quando as duas perguntas acima forem 'Não' juntas.]",
+    },
+]
+
+# ---------------------------------------------------------------------------
 # Seleção do caso e perguntas
 # ---------------------------------------------------------------------------
 st.markdown("---")
@@ -407,8 +429,24 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
             and all(escolha == "Sim" for escolha in respostas_grupo_laudo.values())
         )
 
+        respostas_por_titulo = {item["titulo"]: item["escolha"] for item in respostas_temporarias}
+        combinacoes_disparadas = [
+            combinacao
+            for combinacao in COMBINACOES_RESPOSTA
+            if all(
+                respostas_por_titulo.get(titulo) == combinacao["resposta_gatilho"]
+                for titulo in combinacao["perguntas"]
+            )
+        ]
+        titulos_cobertos_por_combinacao = {
+            titulo
+            for combinacao in combinacoes_disparadas
+            for titulo in combinacao["perguntas"]
+        }
+
         respostas_finais = []
         laudo_texto_inserido = False
+        combinacoes_inseridas = set()
         for item in respostas_temporarias:
             if item["titulo"] in titulos_grupo_laudo and laudo_tudo_sim:
                 # Todas as perguntas deste grupo foram "Sim": em vez dos textos
@@ -416,6 +454,19 @@ if st.button(f"Analisar e Salvar {nome_caso}", type="primary", use_container_wid
                 if not laudo_texto_inserido:
                     respostas_finais.append(TEXTO_LAUDO_SEM_CONSIDERACOES)
                     laudo_texto_inserido = True
+                if item["obs"]:
+                    respostas_finais.append(f"Detalhe adicional: {item['obs']}")
+                continue
+            if item["titulo"] in titulos_cobertos_por_combinacao:
+                # Esta pergunta faz parte de uma combinação disparada: insere a
+                # frase conjunta uma única vez, no lugar da frase individual.
+                combinacao = next(
+                    c for c in combinacoes_disparadas if item["titulo"] in c["perguntas"]
+                )
+                chave_combinacao = tuple(combinacao["perguntas"])
+                if chave_combinacao not in combinacoes_inseridas:
+                    respostas_finais.append(combinacao["texto"])
+                    combinacoes_inseridas.add(chave_combinacao)
                 if item["obs"]:
                     respostas_finais.append(f"Detalhe adicional: {item['obs']}")
                 continue
