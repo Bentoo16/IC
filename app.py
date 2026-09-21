@@ -277,10 +277,10 @@ perguntas = {
             "opcoes": {"Sim": " ", "Não": "O exame não foi classificado corretamente."},
         },
         "Recomendação correta segundo o BI-RADS®": {
-            "opcoes": {"Sim": " ", "Não": " No laudo enviado para avaliação, o exame não foi classificado corretamente, a recomendação de conduta não está correta segundo o BI-RADS®."},
+            "opcoes": {"Sim": " ", "Não": " No laudo enviado para avaliação, o exame não foi classificado corretamente."},
         },
         "Interpretou corretamente todos os achados do exame": {
-            "opcoes": {"Sim": "", "Não": " Todos os achados do exame não foram interpretados corretamente."},
+            "opcoes": {"Sim": "", "Não": " Os achados do exame não foram interpretados corretamente."},
         },
     },
 }
@@ -796,21 +796,6 @@ if st.session_state.relatorios_ia:
         # Perguntas com sub_opcoes podem ter um texto por sub-opção; se uma
         # sub-opção não tiver entrada própria, cai no "_default" da pergunta
         recomendacoes = {
-            "Recomendação correta segundo o BI-RADS®": {
-                "_default":
-                    "Para cada classificação é importante descrever a recomendação apropriada, "
-                    "segundo a quinta edição do BI-RADS®, conforme determina a Portaria de Consolidação "
-                    "nº 5 GM/MS de 28/09/2017, que no seu anexo XXVIII, estabelece: "
-                    "\"o laudo radiográfico deve conter as seguintes informações: "
-                    "a) identificação do serviço, da idade do examinado e data do exame; "
-                    "b) se exame de rastreamento ou de diagnóstico; "
-                    "c) número de filmes ou imagens; "
-                    "d) padrão mamário; "
-                    "e) achados radiográficos; "
-                    "f) classificação BI-RADS®; "
-                    "g) recomendação de conduta; e "
-                    "h) nome e assinatura do médico interpretador do exame.\"",
-            },
             "Utiliza corretamente o Léxico BI-RADS® ou SISMAMA":{
                 "_default":
                     "É recomendado aos médicos do serviço a realização do curso de reciclagem em diagnóstico mamário “Atualização em BI-RADS”, oferecido pelo Colégio Brasileiro de Radiologia. O curso é gratuito para os médicos dos serviços que participam do Programa de Qualidade em Mamografia do INCA. O detalhamento do processo para realização do curso indicado será encaminhado em um e-mail à parte, que tratará exclusivamente desse assunto."
